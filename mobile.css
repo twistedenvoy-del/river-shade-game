@@ -197,3 +197,16 @@
     transition-duration: 0.01ms !important;
   }
 }
+<style>
+@media (max-width: 768px) {
+  #takeJournal {
+    display: block !important;
+    min-height: 48px !important;
+    padding: 1rem 1.5rem !important;
+    margin: 1.5rem auto !important;
+    font-size: 1.1rem !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(156,207,255,0.3);
+  }
+}
+</style>
