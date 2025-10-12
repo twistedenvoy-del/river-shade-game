@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The River Shade – Town</title>
 <link href="style.css" rel="stylesheet"/>
-    <link href="mobile.css" rel="stylesheet"/>
+<link href="mobile.css" rel="stylesheet"/>
 <style>
 body {
   background: #000;
@@ -116,6 +116,32 @@ h1 {
   opacity: 0;
   transition: opacity 2s ease;
 }
+
+/* MOBILE-SPECIFIC JOURNAL FIX */
+@media (max-width: 768px) {
+  #takeJournal {
+    display: block !important;
+    min-height: 60px !important;
+    padding: 1.5rem !important;
+    margin: 2rem auto !important;
+    font-size: 1.2rem !important;
+    width: 85% !important;
+    max-width: 400px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: rgba(156,207,255,0.3) !important;
+    cursor: pointer !important;
+    line-height: 1.4 !important;
+  }
+  
+  #journalChoice {
+    margin: 2.5rem 0 !important;
+    padding: 0 !important;
+  }
+  
+  #journalChoice p {
+    margin: 1rem 0 !important;
+  }
+}
 </style>
 </head>
 
@@ -135,9 +161,9 @@ h1 {
   <p>You pass the chapel's shattered doors. Inside, the pews lie scattered, and a single book rests open upon the altar, its pages untouched by dust or time.</p>
   <p>The writing pulses faintly in the dim light, as though the ink still breathes.</p>
 
-  <p id="journalChoice">
-    <a href="#" class="choice" id="takeJournal">📖 Take the Old Journal</a>
-  </p>
+  <div id="journalChoice">
+    <a href="#" class="choice" id="takeJournal" style="display: block; min-height: 60px; padding: 1.5rem; margin: 2rem auto; touch-action: manipulation; cursor: pointer; font-size: 1.1rem; line-height: 1.4;">📖 Take the Old Journal</a>
+  </div>
 
   <div id="journalTaken" style="display:none;">
     <p>The <strong>Old Journal</strong> feels strangely warm in your hands.</p>
@@ -158,11 +184,34 @@ h1 {
 
 <script>
 // === Reset Player ===
-document.getElementById("resetBtn").addEventListener("click", () => {
-  if (confirm("Reset your journey?")) {
-    localStorage.clear();
-    location.href = "index.html";
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  const resetBtn = document.getElementById("resetBtn");
+  if (!resetBtn) return;
+  
+  const newResetBtn = resetBtn.cloneNode(true);
+  resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+  
+  newResetBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!confirm("Reset your entire journey?")) return;
+    
+    let overlay = document.getElementById("overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.className = "shade-fade";
+      overlay.id = "overlay";
+      document.body.appendChild(overlay);
+    }
+    overlay.classList.add("active");
+    
+    setTimeout(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = `index.html?reset=${Date.now()}`;
+    }, 1000);
+  });
 });
 
 // === Inventory helper ===
@@ -199,7 +248,6 @@ function hasItem(itemName) {
 
 // === Check for True Ending Unlock ===
 window.addEventListener("DOMContentLoaded", () => {
-  // Check if player has collected all 5 items OR has River's Heart
   const hasJournal = hasItem("journal");
   const hasKey = hasItem("key") || hasItem("rust");
   const hasHeart = hasItem("heart") || hasItem("river");
@@ -208,39 +256,53 @@ window.addEventListener("DOMContentLoaded", () => {
   
   const itemCount = [hasJournal, hasKey, hasHeart, hasMark, hasCoin].filter(Boolean).length;
   
-  // Show true ending if player has River's Heart OR all 5 items
   if (hasHeart || itemCount >= 5) {
     const trueLink = document.getElementById("trueEndingLink");
     if (trueLink) {
       trueLink.style.display = "block";
-      console.log("True ending unlocked - player has sufficient items");
+      console.log("True ending unlocked");
     }
   }
 });
 
-// === Take Journal ===
-document.getElementById('takeJournal').addEventListener('click', function(e) {
-  e.preventDefault();
+// === Take Journal - ENHANCED FOR MOBILE ===
+document.addEventListener("DOMContentLoaded", () => {
+  const journalBtn = document.getElementById('takeJournal');
+  if (!journalBtn) return;
   
-  try {
-    const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+  console.log("Journal button found, attaching listeners");
+  
+  // Remove any existing listeners by cloning
+  const newJournalBtn = journalBtn.cloneNode(true);
+  journalBtn.parentNode.replaceChild(newJournalBtn, journalBtn);
+  
+  // Handle both click and touch
+  const handleJournalPickup = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    // Check if already has journal
-    const hasJournal = inv.some(item => {
-      const val = (typeof item === 'string') ? item : (item.name || item.id || '');
-      return val.toLowerCase().includes('journal');
-    });
+    console.log("Journal button activated");
     
-    if (!hasJournal) {
+    try {
+      const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+      
+      const hasJournal = inv.some(item => {
+        const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+        return val.toLowerCase().includes('journal');
+      });
+      
+      if (hasJournal) {
+        console.log("Already has journal");
+        return;
+      }
+      
       inv.push({id: 'journal', name: 'Old Journal'});
       localStorage.setItem('inventory', JSON.stringify(inv));
       
-      // Track achievement
       if (window.trackItemCollected) {
         window.trackItemCollected('journal');
       }
       
-      // Fade effect
       const fade = document.createElement('div');
       fade.className = 'pickup-fade';
       document.body.appendChild(fade);
@@ -254,16 +316,24 @@ document.getElementById('takeJournal').addEventListener('click', function(e) {
         document.getElementById('journalChoice').style.display = 'none';
         document.getElementById('journalTaken').style.display = 'block';
         
-        // Check if true ending should unlock
         const itemCount = JSON.parse(localStorage.getItem('inventory') || '[]').length;
         if (itemCount >= 5 || hasItem("heart") || hasItem("river")) {
           document.getElementById("trueEndingLink").style.display = "block";
         }
+        
+        console.log("Journal pickup complete");
       }, 700);
+    } catch(err) {
+      console.error("Journal pickup error:", err);
+      alert("Error picking up journal. Please refresh and try again.");
     }
-  } catch(err) {
-    console.error("Journal pickup error:", err);
-  }
+  };
+  
+  // Add both click and touchstart for maximum compatibility
+  newJournalBtn.addEventListener('click', handleJournalPickup);
+  newJournalBtn.addEventListener('touchstart', handleJournalPickup, {passive: false});
+  
+  console.log("Journal button listeners attached");
 });
 
 // === Check if journal already taken ===
@@ -280,7 +350,7 @@ try {
   }
 } catch(e) {}
 
-// === UPDATED: Chapel Rest Death Option ===
+// === Chapel Rest Death Option ===
 window.addEventListener("DOMContentLoaded", () => {
   try {
     const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
@@ -291,9 +361,7 @@ window.addEventListener("DOMContentLoaded", () => {
       return val.toLowerCase().includes('journal');
     });
     
-    // Show chapel rest option if has journal OR visited twice
     if (hasJournal || townVisits >= 2) {
-      // Add atmospheric setup first
       const chapelAtmosphere = document.getElementById('chapelAtmosphere');
       chapelAtmosphere.style.display = 'block';
       chapelAtmosphere.innerHTML = `
@@ -304,23 +372,20 @@ window.addEventListener("DOMContentLoaded", () => {
         </p>
       `;
       
-      // Fade in the atmosphere text
       setTimeout(() => {
         const atmosphereText = chapelAtmosphere.querySelector('.chapel-atmosphere');
         if (atmosphereText) atmosphereText.style.opacity = 1;
       }, 500);
       
-      // Add the choice after atmosphere
       setTimeout(() => {
         const content = document.getElementById('content');
         
         const chapelChoice = document.createElement('a');
         chapelChoice.href = '#';
         chapelChoice.id = 'restInChapel';
-        chapelChoice.className = 'choice'; // Standard blue, not purple
-        chapelChoice.textContent = '🕯️ Rest in the chapel's quiet';
+        chapelChoice.className = 'choice';
+        chapelChoice.textContent = '🕯️ Rest in the chapel\'s quiet';
         
-        // Insert after journal section but before bridge link
         const bridgeLink = document.getElementById('bridgeLink');
         if (bridgeLink) {
           content.insertBefore(chapelChoice, bridgeLink);
@@ -335,7 +400,6 @@ window.addEventListener("DOMContentLoaded", () => {
       }, 1500);
     }
     
-    // Increment town visit counter
     localStorage.setItem('townVisitCount', (townVisits + 1).toString());
     
   } catch(err) {
@@ -343,7 +407,6 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// === Chapel Death Sequence ===
 function triggerChapelDeath() {
   const scene = document.querySelector('.scene-text');
   scene.innerHTML = '';
@@ -372,7 +435,6 @@ function triggerChapelDeath() {
   });
   
   setTimeout(() => {
-    // Track unique death
     if (window.trackDeath) {
       window.trackDeath('chapel_isolation');
     }
