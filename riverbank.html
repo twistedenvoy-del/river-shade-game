@@ -268,15 +268,16 @@ document.getElementById('reachOut').addEventListener('click', e => {
   try {
     const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
     const cameFromHaunt = !!flags.fromHaunt;
-    const cameFromIndex = !cameFromHaunt && !flags.visitedRiverbank;
+    const diedHere = !!flags.diedAtRiverbank;
     
     const bridgeLink = document.getElementById('bridgeLink');
     const tavernLink = document.getElementById('tavernLink');
     const pickupKey = document.getElementById('pickupKey');
     const reachOut = document.getElementById('reachOut');
 
-    // Coming from haunt - show exploration options
-    if (cameFromHaunt) {
+    // PRIORITY 1: Coming from haunt - full exploration mode
+    if(cameFromHaunt){
+      console.log("Came from haunt - showing exploration options");
       if (reachOut) reachOut.style.display = 'none';
       if (bridgeLink) bridgeLink.style.display = '';
       if (tavernLink) tavernLink.style.display = '';
@@ -299,15 +300,22 @@ document.getElementById('reachOut').addEventListener('click', e => {
       flags.fromHaunt = false;
       localStorage.setItem('rflags', JSON.stringify(flags));
     } 
-    // Coming from index - only show death option
-    else if (cameFromIndex) {
+    // PRIORITY 2: Coming from index (first visit OR returning after death)
+    // Should ONLY show death option
+    else if (!flags.visitedRiverbank || diedHere) {
+      console.log("First visit or returning after death - death option only");
       if (bridgeLink) bridgeLink.style.display = 'none';
       if (tavernLink) tavernLink.style.display = 'none';
       if (pickupKey) pickupKey.style.display = 'none';
+      if (reachOut) reachOut.style.display = '';
     } 
-    // Normal visit - hide death option
+    // PRIORITY 3: Normal visit (visited before, didn't die, didn't come from haunt)
+    // Hide death option, show exploration
     else {
+      console.log("Normal return visit - exploration mode");
       if (reachOut) reachOut.style.display = 'none';
+      if (bridgeLink) bridgeLink.style.display = '';
+      if (tavernLink) tavernLink.style.display = '';
       if (pickupKey) pickupKey.style.display = '';
     }
 
@@ -328,7 +336,7 @@ document.getElementById('reachOut').addEventListener('click', e => {
         e.preventDefault();
         const scene = document.getElementById('sceneText');
         scene.innerHTML += `
-          <p>Half-buried in river silt, a corroded key catches at the light – too deliberate to be chance.</p>
+          <p>Half-buried in river silt, a corroded key catches at the light — too deliberate to be chance.</p>
           <p>Your fingers close around cold metal. It hums faintly, as if recognizing your touch.</p>
         `;
         
@@ -359,7 +367,7 @@ document.getElementById('reachOut').addEventListener('click', e => {
       });
     }
 
-    // Mark as visited
+    // Mark as visited (but only set flag, don't use it to determine current behavior)
     flags.visitedRiverbank = true;
     localStorage.setItem('rflags', JSON.stringify(flags));
 
