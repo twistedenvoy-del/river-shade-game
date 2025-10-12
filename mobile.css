@@ -196,6 +196,168 @@
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}    font-size: 1.2rem;
+    padding: 0 0.5rem;
+  }
+  
+  p, .scene-text p {
+    font-size: 1rem;
+    line-height: 1.6;
+    padding: 0 0.5rem;
+  }
+  
+  /* === BUTTONS - Touch-friendly size === */
+  .choice,
+  a.choice {
+    min-height: 44px;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    margin: 1rem auto;
+    width: 90%;
+    max-width: 400px;
+  }
+  
+  /* === UI ELEMENTS - Reposition for mobile === */
+  #inventory-box {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 8px 8px 0 0;
+    font-size: 0.85rem;
+    text-align: center;
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  #memory-box {
+    top: 50px;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    font-size: 0.85rem;
+    max-width: 100%;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .reset-btn-top {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
+    min-height: 36px;
+  }
+  
+  .stats-btn-top {
+    left: 0.5rem;
+    right: auto;
+    font-size: 1rem;
+    min-height: 36px;
+  }
+  
+  /* === MODALS - Fit small screens === */
+  .modal-content {
+    width: 95%;
+    padding: 1.5rem 1rem;
+  }
+  
+  #modal-item-name {
+    font-size: 1.2rem;
+  }
+  
+  .modal-close {
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* === NOTIFICATIONS - Adjust position === */
+  .achievement-notification {
+    left: 10px;
+    right: 10px;
+    top: 60px;
+    width: auto;
+  }
+  
+  #memory-alert {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: 90%;
+  }
+  
+  /* === STATS PAGE === */
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .achievement-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* === TITLE SCREEN === */
+  #start-overlay h1 {
+    font-size: 2rem;
+  }
+  
+  #start-btn {
+    min-height: 44px;
+    font-size: 1rem;
+    padding: 0.8em 1.5em;
+  }
+  
+  /* === SPECIAL ELEMENTS === */
+  .hint-box,
+  .hint-text {
+    padding: 0.8rem;
+    font-size: 0.95rem;
+  }
+  
+  .unlocked-badge {
+    display: block;
+    margin-top: 0.3rem;
+  }
+}
+
+/* ==================== SMALL PHONES ==================== */
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.4rem;
+  }
+  
+  .choice {
+    font-size: 0.95rem;
+    padding: 0.9rem 1.2rem;
+    width: 95%;
+  }
+  
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================== TOUCH DEVICES ==================== */
+@media (hover: none) and (pointer: coarse) {
+  .choice,
+  button,
+  a.choice {
+    min-height: 48px;
+  }
+  
+  .modal-close {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .inv-item-clickable {
+    min-height: 36px;
+    padding: 0.3rem 0;
+  }
+}
+
+/* ==================== ACCESSIBILITY ==================== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 <style>
 @media (max-width: 768px) {
