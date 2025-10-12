@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Investigate</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+.scene-text p {
+  opacity: 0;
+  animation: fadeIn 2s ease forwards;
+  margin: 1.5rem 0;
+}
+.scene-text p:nth-child(1) { animation-delay: 0s; }
+.scene-text p:nth-child(2) { animation-delay: 1.5s; }
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+.hint {
+  text-align: center;
+  margin-top: 3rem;
+  color: #666;
+  font-style: italic;
+  font-size: 0.9em;
+}
+.hint-box {
+  background: rgba(156,207,255,0.05);
+  border: 1px solid rgba(156,207,255,0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 2rem auto;
+  max-width: 600px;
+  color: #9ab;
+  font-style: italic;
+  line-height: 1.6;
+}
+.shade-fade {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.95) 90%);
+  opacity: 0;
+  transition: opacity 3s ease;
+  pointer-events: none;
+  z-index: 9998;
+}
+.shade-fade.active {
+  opacity: 1;
+}
+.choice {
+  display: block;
+  color: #9cf;
+  text-decoration: none;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover {
+  background: rgba(156,207,255,0.1);
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+.dialogue-line {
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  margin: 1.2em 0;
+  color: #ddd;
+}
+</style>
+</head>
+
+<body data-scene="investigate">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<div class="scene-text fade-in" id="sceneText">
+  <p>The path curls inward around a hollow of reeds.<br/>
+     The sound of the river is strange here – like someone breathing through their teeth.</p>
+  <p>You kneel, brushing back the mist to see what stirs beneath.</p>
+</div>
+
+<footer class="hint">The silence waits for you to decide.</footer>
+
+<div id="inventory-box"></div>
+
+<script>
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Check inventory for protection ===
+function hasItem(itemName) {
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    return inv.some(item => {
+      const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+      return val.toLowerCase().includes(itemName.toLowerCase());
+    });
+  } catch(e) {
+    return false;
+  }
+}
+
+const hasKey = hasItem("key") || hasItem("rust");
+const hasJournal = hasItem("journal");
+const hasProtection = hasKey || hasJournal;
+
+// Check if already visited
+const alreadyVisited = localStorage.getItem('investigateVisited') === 'true';
+
+// === Scene logic ===
+const overlay = document.createElement('div');
+overlay.className = 'shade-fade';
+document.body.appendChild(overlay);
+
+const sceneText = document.getElementById('sceneText');
+
+if (!hasProtection) {
+  // === NO ITEMS PATH ===
+  if (alreadyVisited) {
+    // Return visit without items - give stronger hint
+    setTimeout(() => {
+      const hint = document.createElement('div');
+      hint.className = 'hint-box';
+      hint.innerHTML = `
+        <p>The reeds part again, but this time you sense the danger.</p>
+        <p style="margin-top: 1rem;">The river whispers: <em>"You came unprepared... again."</em></p>
+        <p style="margin-top: 1rem; color: #9cf;"><strong>Perhaps you need something to protect you – something that unlocks secrets, or something that remembers.</strong></p>
+      `;
+      sceneText.appendChild(hint);
+      
+      setTimeout(() => {
+        const choices = document.createElement('div');
+        choices.innerHTML = '<a href="index.html" class="choice">↩ Return to search for protection</a>';
+        sceneText.appendChild(choices);
+      }, 2000);
+    }, 2000);
+    
+  } else {
+    // First visit without items - death sequence
+    setTimeout(() => {
+      const p = document.createElement('p');
+      p.innerHTML = "The reeds part.<br/>Something pale unfurls from the water, impossibly thin, impossibly human.";
+      p.style.animationDelay = "0s";
+      sceneText.appendChild(p);
+    }, 3000);
+
+    setTimeout(() => {
+      const p = document.createElement('p');
+      p.innerHTML = "It leans close, breath like old river silt.<br/>You try to move, but the fog holds you fast.";
+      p.style.animationDelay = "0s";
+      sceneText.appendChild(p);
+    }, 6500);
+
+    setTimeout(() => {
+      const p = document.createElement('p');
+      p.innerHTML = "The last thing you hear is your own breath echoing back,<br/>from somewhere deep beneath the surface.";
+      p.style.animationDelay = "0s";
+      sceneText.appendChild(p);
+    }, 10000);
+
+    setTimeout(() => {
+      // TRACK DEATH BEFORE FADE
+      if (window.trackDeath) {
+        window.trackDeath('investigation_taken');
+      }
+      
+      overlay.classList.add('active');
+      setTimeout(() => {
+        sceneText.innerHTML = `
+          <p style="animation: fadeIn 2s ease 0s forwards;">The current claims what it is owed.</p>
+          <p style="animation: fadeIn 2s ease 2s forwards;">There is no return.</p>
+        `;
+        overlay.classList.remove('active');
+        
+        setTimeout(() => {
+          const restart = document.createElement('div');
+          restart.style.textAlign = "center";
+          restart.style.marginTop = "2rem";
+          restart.innerHTML = '<a href="awakening.html" class="choice">🌊 Awaken</a>';
+          sceneText.appendChild(restart);
+        }, 4000);
+      }, 3000);
+    }, 14000);
+    
+    // Mark as visited for hint on return
+    localStorage.setItem('investigateVisited', 'true');
+  }
+
+} else {
+  // === HAS PROTECTION - OMINOUS CONVERSATION PATH ===
+  
+  // Faster dialogue if they have items
+  const dialogueSpeed = 1800; // Reduced from 3500ms to 1800ms
+  
+  const dialogueLines = [
+    {text: "The mist stills when your hand brushes the surface.<br/>The reflection doesn't match your breath.", delay: 0},
+    {text: '<em>Voice:</em> "You brought it back..."', delay: dialogueSpeed},
+    {text: '<em>Player:</em> "What is this place?"', delay: dialogueSpeed * 2},
+    {text: '<em>Voice:</em> "Not what. Who.<br/>The key. The words. They were mine once."', delay: dialogueSpeed * 3},
+    {text: "Your reflection smiles faintly, water rippling outward.<br/>The fog curls tighter around your throat.", delay: dialogueSpeed * 4}
+  ];
+  
+  setTimeout(() => {
+    dialogueLines.forEach((line, index) => {
+      setTimeout(() => {
+        const p = document.createElement('p');
+        p.className = 'dialogue-line';
+        p.innerHTML = line.text;
+        sceneText.appendChild(p);
+        setTimeout(() => p.style.opacity = 1, 100);
+      }, line.delay);
+    });
+    
+    // Store persistent flag that the Voice was heard & unlock achievement
+    setTimeout(() => {
+      try {
+        const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+        flags.heardVoice = true;
+        localStorage.setItem('rflags', JSON.stringify(flags));
+        console.log("Voice heard - flag set");
+        
+        // Track achievement
+        if (window.unlockAchievement) {
+          window.unlockAchievement('voice_heard');
+        }
+      } catch(e) {
+        console.warn("Could not set voice flag:", e);
+      }
+      
+      // Add understanding text
+      const understanding = document.createElement('div');
+      understanding.className = 'hint-box';
+      understanding.innerHTML = `
+        <p><em>The voice fades, but you understand now.</em></p>
+        <p style="margin-top: 1rem;"><strong>The fragments you carry remember their origin. They were pieces of something – or someone – who drowned here long ago.</strong></p>
+      `;
+      sceneText.appendChild(understanding);
+      
+      setTimeout(() => {
+        overlay.classList.add('active');
+        setTimeout(() => {
+          sceneText.innerHTML = `
+            <p style="animation: fadeIn 2s ease 0s forwards;">The river remembers you now.</p>
+            <p style="animation: fadeIn 2s ease 2s forwards;">There will be no second warning.</p>
+          `;
+          overlay.classList.remove('active');
+          
+          setTimeout(() => {
+            const restart = document.createElement('div');
+            restart.style.textAlign = "center";
+            restart.style.marginTop = "2rem";
+            restart.innerHTML = '<a href="index.html" class="choice">↻ Return to the mist</a>';
+            sceneText.appendChild(restart);
+          }, 4000);
+        }, 3000);
+      }, 3000);
+      
+    }, (dialogueLines.length * dialogueSpeed) + 1000);
+    
+  }, 2000);
+}
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

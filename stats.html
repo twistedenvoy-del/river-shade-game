@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Statistics</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+}
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+h1 {
+  text-align: center;
+  color: #9cf;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 20px rgba(156,207,255,0.4);
+}
+.section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(156,207,255,0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+.section-title {
+  font-size: 1.3rem;
+  color: #9cf;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+}
+.stat-value {
+  font-size: 2rem;
+  color: #9cf;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.stat-label {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.achievement-card {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(156,207,255,0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  transition: all 0.3s;
+}
+.achievement-card.unlocked {
+  background: rgba(156,207,255,0.08);
+  border-color: rgba(156,207,255,0.4);
+}
+.achievement-card.locked {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+.achievement-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 5px rgba(156,207,255,0.3));
+}
+.achievement-info {
+  flex: 1;
+}
+.achievement-name {
+  font-size: 1rem;
+  color: #9cf;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+.achievement-desc {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+.achievement-card.locked .achievement-name {
+  color: #666;
+}
+.achievement-card.locked .achievement-desc {
+  color: #444;
+}
+.secret-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: rgba(255,215,0,0.2);
+  border: 1px solid rgba(255,215,0,0.4);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: #ffd700;
+  margin-left: 0.5rem;
+}
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a90e2, #9cf);
+  transition: width 1s ease;
+}
+.btn-back {
+  display: block;
+  margin: 2rem auto 0 auto;
+  text-align: center;
+  color: #9cf;
+  text-decoration: none;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 200px;
+  transition: all 0.3s;
+}
+.btn-back:hover {
+  background: rgba(156,207,255,0.1);
+}
+</style>
+</head>
+
+<body data-scene="stats">
+
+<div class="container">
+  <h1>📊 Player Statistics</h1>
+
+  <!-- Core Stats -->
+  <div class="section">
+    <div class="section-title">🎮 Journey Overview</div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-deaths">0</div>
+        <div class="stat-label">Total Deaths</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-endings">0</div>
+        <div class="stat-label">Endings Reached</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-items">0</div>
+        <div class="stat-label">Items Collected</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-locations">0</div>
+        <div class="stat-label">Locations Visited</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievement Progress -->
+  <div class="section">
+    <div class="section-title">
+      🏆 Achievement Progress
+      <span style="margin-left: auto; font-size: 0.9rem; color: #aaa;" id="achievement-count">0/12</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="achievement-progress" style="width: 0%;"></div>
+    </div>
+    <div class="achievement-grid" id="achievement-list">
+      <!-- Achievements will be populated here -->
+    </div>
+  </div>
+
+  <a href="index.html" class="btn-back">← Return to Game</a>
+</div>
+
+<script src="achievements.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const stats = window.getPlayerStats();
+  const achievements = window.getAchievements();
+  
+  // Display stats
+  document.getElementById('stat-deaths').textContent = stats.totalDeaths || 0;
+  document.getElementById('stat-endings').textContent = (stats.endingsReached || []).length;
+  document.getElementById('stat-items').textContent = (stats.itemsCollected || []).length;
+  document.getElementById('stat-locations').textContent = (stats.locationsVisited || []).length;
+  
+  // Display achievements
+  const achievementList = document.getElementById('achievement-list');
+  const unlockedAchievements = stats.achievements || [];
+  const totalAchievements = Object.keys(achievements).length;
+  
+  // Update progress
+  const progress = (unlockedAchievements.length / totalAchievements) * 100;
+  document.getElementById('achievement-progress').style.width = progress + '%';
+  document.getElementById('achievement-count').textContent = 
+    `${unlockedAchievements.length}/${totalAchievements}`;
+  
+  // Render achievement cards
+  Object.values(achievements).forEach(achievement => {
+    const unlocked = unlockedAchievements.includes(achievement.id);
+    
+    const card = document.createElement('div');
+    card.className = `achievement-card ${unlocked ? 'unlocked' : 'locked'}`;
+    
+    // Show secret achievements as ??? if locked
+    const name = (!unlocked && achievement.secret) ? '???' : achievement.name;
+    const desc = (!unlocked && achievement.secret) ? 'Secret Achievement' : achievement.description;
+    const icon = (!unlocked && achievement.secret) ? '🔒' : achievement.icon;
+    
+    card.innerHTML = `
+      <div class="achievement-icon">${icon}</div>
+      <div class="achievement-info">
+        <div class="achievement-name">
+          ${name}
+          ${achievement.secret && unlocked ? '<span class="secret-badge">SECRET</span>' : ''}
+        </div>
+        <div class="achievement-desc">${desc}</div>
+      </div>
+    `;
+    
+    achievementList.appendChild(card);
+  });
+});
+</script>
+
+</body>
+</html>

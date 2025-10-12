@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>The River Shade – Perfect Tavern</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+  body{background:#000;color:#dfeeff;font-family:Georgia,serif;padding:2rem;}
+  .choice{display:block;color:#9cf;text-decoration:none;margin:1rem 0;padding:.4rem .8rem;border:1px solid #9cf;border-radius:8px;}
+  #inventory-box{position:fixed;right:1rem;bottom:1rem;background:rgba(0,0,0,0.6);border:1px solid #567;padding:.6rem 1rem;border-radius:8px;color:#dfeeff;font-family:monospace;z-index:1000;}
+  #fade-overlay{position:fixed;left:0;top:0;width:100%;height:100%;background:#000;opacity:0;pointer-events:none;z-index:2000;transition:opacity 2.2s ease;}
+  .memory-line{color:#9fbfff;font-style:italic;text-align:center;font-size:1.2rem;opacity:0;transition:opacity 1.6s ease;}
+  #memory-alert{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#062134,#0f2740);color:#cfeafc;padding:10px 18px;border-radius:10px;opacity:0;transition:opacity .6s;z-index:2100;font-family:monospace;}
+  #back-link{display:none;margin-top:1rem;}
+</style>
+</head>
+<body data-scene="perfect_tavern">
+
+<main id="scene">
+  <h1>The Perfect Tavern</h1>
+
+  <div id="scene-content">
+    <p>You push open the door. The stools face away from the bar.</p>
+    <p>The mirror reflects the bridge instead of you.</p>
+    <p>The air smells faintly of river water and something burnt.</p>
+  </div>
+
+  <div id="interaction" style="margin-top:1.2rem;">
+    <a href="#" id="interact-btn" class="choice">Approach the bar</a>
+    <a href="#" id="inspect-coin" class="choice" style="display:none;">Examine the Fragment of Still Water</a>
+    <a href="perfect_path.html" id="leave-btn" class="choice">Return to the Crossroads</a>
+    <a href="#" id="back-link" class="choice">Return to the River Shade</a>
+  </div>
+</main>
+
+<div id="inventory-box"></div>
+<div id="fade-overlay"></div>
+<div id="memory-alert">✦ Memory of the Bargain recovered.</div>
+
+<script>
+/* ------------ Mark as visited and unlock paths immediately ------------ */
+localStorage.setItem('visited_tavern','true');
+localStorage.setItem('visited_riverbank','true');
+localStorage.setItem('visited_haunt','true');
+localStorage.setItem('last_perfect_visit','perfect_tavern');
+
+/* ------------ Inventory helpers ------------ */
+function parseInventory(){
+  let raw=[];
+  try{raw=JSON.parse(localStorage.getItem('inventory')||'[]');}catch(e){raw=[];}
+  return raw.map(it=>{
+    if(typeof it==='string')return{id:it,name:it.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())};
+    if(it&&typeof it==='object')return it;
+    return{id:String(it),name:String(it)};
+  });
+}
+
+function refreshInventoryUI(){
+  const inv=parseInventory();
+  const box=document.getElementById('inventory-box');
+  box.innerHTML="<strong>Inventory</strong><br>"+(inv.length?inv.map(i=>i.name||i.id).join('<br>'):'(empty)');
+}
+
+/* ------------ Memory triggers ------------ */
+function hasFragmentOfStillWater(){
+  const inv=parseInventory();
+  return inv.some(i=>/still\s*water/i.test(i.name||i.id));
+}
+
+function playMemoryCinematicThenUnlock(){
+  if(localStorage.getItem('memory_tavern')==='true'){
+    showBackLink();
+    return;
+  }
+  
+  const fade=document.getElementById('fade-overlay');
+  const alert=document.getElementById('memory-alert');
+  fade.style.opacity='1';
+  fade.style.pointerEvents='auto';
+  
+  const lines=[
+    "The coin trembles in your palm – a stillness that remembers.",
+    "A bargain rises up, older than promise and new as breath.",
+    "You feel the shadow of that bargain settle on your bones."
+  ];
+  
+  const container=document.createElement('div');
+  Object.assign(container.style,{
+    position:'fixed',top:'35%',left:'50%',transform:'translateX(-50%)',
+    zIndex:'2050',maxWidth:'80%',pointerEvents:'none'
+  });
+  document.body.appendChild(container);
+  
+  lines.forEach((txt,idx)=>{
+    const el=document.createElement('div');
+    el.className='memory-line';
+    el.textContent=txt;
+    el.style.marginTop='0.6rem';
+    container.appendChild(el);
+    setTimeout(()=>el.style.opacity='1',1800+idx*2000);
+  });
+  
+  setTimeout(()=>{
+    alert.style.opacity='1';
+  },1800+lines.length*2000);
+  
+  setTimeout(()=>{
+    // SET FLAGS - both naming conventions
+    localStorage.setItem('memory_tavern','true');
+    localStorage.setItem('tavernMemoryUnlocked','true');
+    
+    alert.style.opacity='0';
+    fade.style.opacity='0';
+    fade.style.pointerEvents='none';
+    container.remove();
+    showBackLink();
+  },1800+lines.length*2000+3000);
+}
+
+/* ------------ Interaction logic ------------ */
+function showBackLink(){
+  const back=document.getElementById('back-link');
+  back.style.display='block';
+  back.onclick=function(e){
+    e.preventDefault();
+    window.location.href='perfect_path.html';
+  };
+}
+
+function setupInteractionStage(){
+  const inspectBtn=document.getElementById('inspect-coin');
+  if(hasFragmentOfStillWater()){
+    inspectBtn.style.display='inline-block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  refreshInventoryUI();
+  setupInteractionStage();
+
+  // Tavern automatically responds to Fragment of Still Water presence
+  if(hasFragmentOfStillWater() && localStorage.getItem('memory_tavern')!=='true'){
+    setTimeout(()=>{
+      const msg=document.createElement('div');
+      msg.style.color='#9fbfff';
+      msg.style.textAlign='center';
+      msg.style.marginTop='1.2rem';
+      msg.textContent='A memory stirs within the walls…';
+      document.getElementById('scene').appendChild(msg);
+      setTimeout(()=>{
+        msg.remove();
+        playMemoryCinematicThenUnlock();
+      },2200);
+    },1600);
+  }
+
+  document.getElementById('interact-btn').addEventListener('click',e=>{
+    e.preventDefault();
+    if(hasFragmentOfStillWater()){
+      document.getElementById('inspect-coin').style.display='inline-block';
+    }else{
+      const note=document.createElement('div');
+      note.style.color='#9fbfff';
+      note.style.marginTop='8px';
+      note.textContent='There is a quiet tug in your pocket – if only something heavy lay there.';
+      document.getElementById('interaction').appendChild(note);
+      setTimeout(()=>note.remove(),4200);
+    }
+  });
+
+  document.getElementById('inspect-coin').addEventListener('click',e=>{
+    e.preventDefault();
+    if(hasFragmentOfStillWater()){
+      playMemoryCinematicThenUnlock();
+    }else{
+      const note=document.createElement('div');
+      note.style.color='#9fbfff';
+      note.style.marginTop='8px';
+      note.textContent='The fragment remains stubbornly mute.';
+      document.getElementById('interaction').appendChild(note);
+      setTimeout(()=>note.remove(),3000);
+    }
+  });
+});
+</script>
+</body>
+</html>

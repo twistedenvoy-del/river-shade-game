@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Bad Ending</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+.scene-text p {
+  margin: 1.5rem 0;
+}
+.hint {
+  text-align: center;
+  margin-top: 3rem;
+  color: #666;
+  font-style: italic;
+  font-size: 0.9em;
+}
+.shade-fade {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.95) 90%);
+  opacity: 0;
+  transition: opacity 3s ease;
+  pointer-events: none;
+  z-index: 9998;
+}
+.shade-fade.active {
+  opacity: 1;
+}
+.choice {
+  display: block;
+  color: #9cf;
+  text-decoration: none;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover {
+  background: rgba(156,207,255,0.1);
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+</style>
+</head>
+
+<body data-scene="bad_ending">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<div class="scene-text fade-in">
+  <p id="line1">You wait.</p>
+  <p id="line2" style="opacity:0;">The wind doesn't move, the river doesn't breathe.</p>
+  <p id="line3" style="opacity:0;">Something stands behind you – close enough to touch, but it never does.</p>
+  <p id="line4" style="opacity:0;">You linger too long.</p>
+  <p id="line5" style="opacity:0;">The watching thing steps forward, and the fog swallows everything that remembers you.</p>
+  <p id="line6" style="opacity:0;">The River Shade forgets your name.</p>
+</div>
+
+<footer class="hint">Silence has claimed another.</footer>
+
+<div id="restart" style="display:none;text-align:center;margin-top:2rem;"></div>
+
+<script>
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Fade overlay ===
+const overlay = document.createElement('div');
+overlay.className = 'shade-fade';
+document.body.appendChild(overlay);
+
+// === Timed line reveals ===
+const timings = [2000, 4000, 6000, 9000, 11500, 14000];
+timings.forEach((t, i) => {
+  setTimeout(() => {
+    const line = document.getElementById('line' + (i + 1));
+    if (line) line.style.opacity = 1;
+  }, t);
+});
+
+// Track bad ending achievement AND death immediately
+setTimeout(() => {
+  // Track as ending (unlocks bad_end achievement)
+  if (window.trackEnding) {
+    window.trackEnding('bad');
+    console.log("Bad ending tracked - achievement unlocked");
+  }
+  
+  // ADDED: Also track as a death for statistics
+  if (window.trackDeath) {
+    window.trackDeath('bad_ending_death');
+    console.log("Bad ending death tracked");
+  }
+}, 1000);
+
+// === Fade-out and restart ===
+setTimeout(() => {
+  overlay.classList.add('active');
+  setTimeout(() => {
+    document.querySelector('.scene-text').innerHTML =
+      '<p>The fog settles.</p><p>There will be no return this time.</p>';
+    overlay.classList.remove('active');
+    
+    const restart = document.getElementById('restart');
+    restart.innerHTML = '<a href="stinger.html" class="choice">↻ Continue</a>';
+    restart.style.display = 'block';
+  }, 4000);
+}, 18000);
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+</body>
+</html>

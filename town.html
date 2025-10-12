@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Town</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  text-align: center;
+  padding: 2em;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+  margin-bottom: 2rem;
+}
+.choice {
+  display: block;
+  color: #9cf;
+  text-decoration: none;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover {
+  background: rgba(156,207,255,0.1);
+}
+.choice.true-ending-choice {
+  color: #9cf;
+  border-color: #9cf;
+  box-shadow: 0 0 15px rgba(156,207,255,0.3);
+  animation: truePulse 3s infinite;
+}
+@keyframes truePulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(156,207,255,0.3); }
+  50% { box-shadow: 0 0 25px rgba(156,207,255,0.5); }
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.pickup-fade {
+  position: fixed;
+  inset: 0;
+  background: black;
+  opacity: 0;
+  transition: opacity 0.75s ease-in-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+.pickup-fade.active { 
+  opacity: 1; 
+}
+.shade-fade {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.95) 90%);
+  opacity: 0;
+  transition: opacity 2s ease;
+  pointer-events: none;
+  z-index: 9998;
+}
+.shade-fade.active {
+  opacity: 1;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+.fade-line {
+  opacity: 0;
+  transition: opacity 2s ease;
+  margin: 1.5em 0;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.chapel-atmosphere {
+  color: #aab;
+  font-style: italic;
+  margin: 1.5rem 0;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+</style>
+</head>
+
+<body data-scene="town">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<section class="scene-text">
+  <p>The town is eerily still – not abandoned, but paused, as if someone pressed a finger to its throat and forgot to let go.</p>
+  <p>Shutters hang loose on their hinges, whispering as the wind drags through empty streets. The cobblestones glisten faintly – not with rain, but with something colder, older.</p>
+  <p>Every sound you make arrives late, as if the air needs time to remember what noise is.</p>
+</section>
+
+<h1>The Silent Town</h1>
+
+<div id="content">
+  <p>You pass the chapel's shattered doors. Inside, the pews lie scattered, and a single book rests open upon the altar, its pages untouched by dust or time.</p>
+  <p>The writing pulses faintly in the dim light, as though the ink still breathes.</p>
+
+  <p id="journalChoice">
+    <a href="#" class="choice" id="takeJournal">📖 Take the Old Journal</a>
+  </p>
+
+  <div id="journalTaken" style="display:none;">
+    <p>The <strong>Old Journal</strong> feels strangely warm in your hands.</p>
+    <p>The ink ripples across the page, forming and unforming your name.</p>
+  </div>
+  
+  <!-- Chapel atmosphere section (appears conditionally) -->
+  <div id="chapelAtmosphere" style="display:none;"></div>
+
+  <a href="bridge.html" class="choice" id="bridgeLink">🌉 Head Toward the Bridge</a>
+  <a href="tavern.html" class="choice">🍺 Visit the Tavern</a>
+  <a href="true_ending.html" class="choice true-ending-choice" id="trueEndingLink" style="display:none;">🌊 Follow the river out of the valley</a>
+  <a href="index.html" class="choice">⬅️ Return to the Crossroads</a>
+</div>
+
+<div class="shade-fade" id="overlay"></div>
+<div id="inventory-box"></div>
+
+<script>
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Helper to check for items ===
+function hasItem(itemName) {
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    return inv.some(item => {
+      const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+      return val.toLowerCase().includes(itemName.toLowerCase());
+    });
+  } catch(e) {
+    return false;
+  }
+}
+
+// === Check for True Ending Unlock ===
+window.addEventListener("DOMContentLoaded", () => {
+  // Check if player has collected all 5 items OR has River's Heart
+  const hasJournal = hasItem("journal");
+  const hasKey = hasItem("key") || hasItem("rust");
+  const hasHeart = hasItem("heart") || hasItem("river");
+  const hasMark = hasItem("mark") || hasItem("shade");
+  const hasCoin = hasItem("coin") || hasItem("silver");
+  
+  const itemCount = [hasJournal, hasKey, hasHeart, hasMark, hasCoin].filter(Boolean).length;
+  
+  // Show true ending if player has River's Heart OR all 5 items
+  if (hasHeart || itemCount >= 5) {
+    const trueLink = document.getElementById("trueEndingLink");
+    if (trueLink) {
+      trueLink.style.display = "block";
+      console.log("True ending unlocked - player has sufficient items");
+    }
+  }
+});
+
+// === Take Journal ===
+document.getElementById('takeJournal').addEventListener('click', function(e) {
+  e.preventDefault();
+  
+  try {
+    const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+    
+    // Check if already has journal
+    const hasJournal = inv.some(item => {
+      const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+      return val.toLowerCase().includes('journal');
+    });
+    
+    if (!hasJournal) {
+      inv.push({id: 'journal', name: 'Old Journal'});
+      localStorage.setItem('inventory', JSON.stringify(inv));
+      
+      // Track achievement
+      if (window.trackItemCollected) {
+        window.trackItemCollected('journal');
+      }
+      
+      // Fade effect
+      const fade = document.createElement('div');
+      fade.className = 'pickup-fade';
+      document.body.appendChild(fade);
+      setTimeout(() => fade.classList.add('active'), 75);
+      
+      setTimeout(() => {
+        refreshInventoryBoxSafe();
+        fade.classList.remove('active');
+        setTimeout(() => fade.remove(), 750);
+        
+        document.getElementById('journalChoice').style.display = 'none';
+        document.getElementById('journalTaken').style.display = 'block';
+        
+        // Check if true ending should unlock
+        const itemCount = JSON.parse(localStorage.getItem('inventory') || '[]').length;
+        if (itemCount >= 5 || hasItem("heart") || hasItem("river")) {
+          document.getElementById("trueEndingLink").style.display = "block";
+        }
+      }, 700);
+    }
+  } catch(err) {
+    console.error("Journal pickup error:", err);
+  }
+});
+
+// === Check if journal already taken ===
+try {
+  const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+  const hasJournal = inv.some(item => {
+    const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+    return val.toLowerCase().includes('journal');
+  });
+  
+  if (hasJournal) {
+    document.getElementById('journalChoice').style.display = 'none';
+    document.getElementById('journalTaken').style.display = 'block';
+  }
+} catch(e) {}
+
+// === UPDATED: Chapel Rest Death Option ===
+window.addEventListener("DOMContentLoaded", () => {
+  try {
+    const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+    const townVisits = parseInt(localStorage.getItem('townVisitCount') || '0', 10);
+    
+    const hasJournal = inv.some(i => {
+      const val = (typeof i === 'string') ? i : (i.name || i.id || '');
+      return val.toLowerCase().includes('journal');
+    });
+    
+    // Show chapel rest option if has journal OR visited twice
+    if (hasJournal || townVisits >= 2) {
+      // Add atmospheric setup first
+      const chapelAtmosphere = document.getElementById('chapelAtmosphere');
+      chapelAtmosphere.style.display = 'block';
+      chapelAtmosphere.innerHTML = `
+        <p class="chapel-atmosphere">
+          The chapel doors stand open, offering shelter from the watching streets. 
+          Inside, candlelight flickers softly against worn stone walls. 
+          The pews remember prayers whispered in darkness.
+        </p>
+      `;
+      
+      // Fade in the atmosphere text
+      setTimeout(() => {
+        const atmosphereText = chapelAtmosphere.querySelector('.chapel-atmosphere');
+        if (atmosphereText) atmosphereText.style.opacity = 1;
+      }, 500);
+      
+      // Add the choice after atmosphere
+      setTimeout(() => {
+        const content = document.getElementById('content');
+        
+        const chapelChoice = document.createElement('a');
+        chapelChoice.href = '#';
+        chapelChoice.id = 'restInChapel';
+        chapelChoice.className = 'choice'; // Standard blue, not purple
+        chapelChoice.textContent = '🕯️ Rest in the chapel's quiet';
+        
+        // Insert after journal section but before bridge link
+        const bridgeLink = document.getElementById('bridgeLink');
+        if (bridgeLink) {
+          content.insertBefore(chapelChoice, bridgeLink);
+        } else {
+          content.appendChild(chapelChoice);
+        }
+        
+        chapelChoice.addEventListener('click', (e) => {
+          e.preventDefault();
+          triggerChapelDeath();
+        });
+      }, 1500);
+    }
+    
+    // Increment town visit counter
+    localStorage.setItem('townVisitCount', (townVisits + 1).toString());
+    
+  } catch(err) {
+    console.error("Chapel death setup error:", err);
+  }
+});
+
+// === Chapel Death Sequence ===
+function triggerChapelDeath() {
+  const scene = document.querySelector('.scene-text');
+  scene.innerHTML = '';
+  
+  const lines = [
+    "You step into the chapel's embrace, away from the weight of empty streets.",
+    "The shadows here feel different – softer, safer.",
+    "Nothing can reach you in this quiet. Nothing can hurt you here.",
+    "The pews creak with absent weight. Ghosts of a congregation that no longer gathers.",
+    "You sink deeper into the corner, wrapped in stillness.",
+    "Time loses meaning. Has it been hours? Days?",
+    "You realize you can't remember the last time someone looked at you with kindness.",
+    "Better here. Safer here. Alone.",
+    "The shadows wrap tighter—no longer comfort but chains.",
+    "You try to stand, to leave—but your legs won't move.",
+    "The chapel door is still open. The light still beckons.",
+    "But you can't remember how to walk toward it anymore."
+  ];
+  
+  lines.forEach((text, i) => {
+    const p = document.createElement('p');
+    p.className = 'fade-line';
+    p.innerHTML = `<em>${text}</em>`;
+    scene.appendChild(p);
+    setTimeout(() => p.style.opacity = 1, i * 2800);
+  });
+  
+  setTimeout(() => {
+    // Track unique death
+    if (window.trackDeath) {
+      window.trackDeath('chapel_isolation');
+    }
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'shade-fade';
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.classList.add('active'), 100);
+    
+    setTimeout(() => {
+      window.location.href = 'awakening.html';
+    }, 2500);
+  }, lines.length * 2800 + 1000);
+}
+
+// === Bridge flag setup ===
+document.getElementById('bridgeLink').addEventListener('click', (e) => {
+  try {
+    const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+    flags.crossedBridge = true;
+    localStorage.setItem('rflags', JSON.stringify(flags));
+  } catch(err) {
+    console.warn("Could not set bridge flag:", err);
+  }
+});
+
+// === True ending fade transition ===
+const trueEndingLink = document.getElementById('trueEndingLink');
+if (trueEndingLink) {
+  trueEndingLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    const overlay = document.getElementById('overlay');
+    if (overlay) overlay.classList.add('active');
+    setTimeout(() => { 
+      window.location.href = 'true_ending.html'; 
+    }, 2000);
+  });
+}
+
+// === Mark town as visited ===
+try {
+  const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+  flags.visitedTown = true;
+  localStorage.setItem('rflags', JSON.stringify(flags));
+} catch(e) {}
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

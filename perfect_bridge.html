@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Perfect Bridge</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ddd;
+  font-family: 'Georgia', serif;
+  text-align: center;
+  padding: 2em;
+}
+.scene-text { 
+  max-width: 760px; 
+  margin: 0 auto; 
+  line-height: 1.8;
+}
+.choice { 
+  display: block; 
+  color: #9cf; 
+  text-decoration: none; 
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover { 
+  background: rgba(156,207,255,0.1);
+}
+.fade-line { 
+  opacity: 0; 
+  transition: opacity 2.8s ease; 
+  margin: 1.5em 0; 
+  color: #ddd; 
+}
+#inventory-box {
+  position: fixed; 
+  bottom: 1rem; 
+  right: 1rem;
+  background: rgba(0,0,0,0.6); 
+  border: 1px solid #888;
+  padding: .5rem 1rem; 
+  font-family: monospace; 
+  color: #eee;
+  border-radius: 8px;
+  z-index: 1000;
+  max-width: 260px;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+.shade-glow {
+  animation: pulseShade 2s infinite;
+  color: #e66;
+  font-weight: bold;
+}
+@keyframes pulseShade {
+  0% { opacity: 1; text-shadow: 0 0 0px rgba(255,50,50,0); }
+  50% { opacity: 0.7; text-shadow: 0 0 14px rgba(255,0,0,0.2); }
+  100% { opacity: 1; text-shadow: 0 0 0px rgba(255,50,50,0); }
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #9cf;
+  text-shadow: 0 0 20px rgba(156,207,255,0.3);
+}
+</style>
+</head>
+
+<body data-scene="perfect_bridge">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<main class="scene-text">
+  <h1>The Perfect Bridge</h1>
+  <p class="fade-line" id="lead-1">The bridge stands silent — older than time, slick with mist.</p>
+  <p class="fade-line" id="lead-2">You feel every fragment burning against your skin, calling to something just beyond the fog.</p>
+  <div id="dynamic"></div>
+  <div id="choices" style="margin-top:1.5rem;"></div>
+</main>
+
+<div id="inventory-box"></div>
+
+<script>
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// Mark as visited
+localStorage.setItem('visited_bridge', 'true');
+localStorage.setItem('last_perfect_visit', 'perfect_bridge');
+
+// ---------- Utility ----------
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if(!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+
+function pulseText(lines, delay = 3000, onDone = null){
+  const container = document.getElementById("dynamic");
+  container.innerHTML = "";
+  lines.forEach((txt, i) => {
+    const p = document.createElement("p");
+    p.className = "fade-line";
+    p.innerHTML = txt;
+    container.appendChild(p);
+    setTimeout(()=> p.style.opacity = 1, i * delay);
+  });
+  if(onDone) setTimeout(onDone, lines.length * delay + 600);
+}
+
+function showChoices(options){
+  const div = document.getElementById("choices");
+  div.innerHTML = "";
+  options.forEach(opt => {
+    const a = document.createElement("a");
+    a.href = "#";
+    a.className = "choice";
+    a.textContent = opt.text;
+    a.onclick = (e) => { e.preventDefault(); opt.action(); };
+    div.appendChild(a);
+  });
+}
+
+// ---------- Scene Logic ----------
+function beginBridge(){
+  refreshInventoryBoxSafe();
+
+  // Check if player has all five memories
+  const allMemories = [
+    "memory_cellar", "memory_town", "memory_haunt", "memory_riverbank", "memory_tavern"
+  ];
+  const hasAll = allMemories.every(k => localStorage.getItem(k) === 'true');
+  
+  // Count how many memories collected
+  const memCount = allMemories.filter(k => localStorage.getItem(k) === 'true').length;
+
+  if(!hasAll){
+    pulseText([
+      "The bridge hums faintly. The fog shivers, but will not part.",
+      "You reach out — something pushes back.",
+      `You have recovered ${memCount} of 5 memories. The bridge demands more.`,
+      "It isn't time yet. You can feel the missing pieces tugging at your skin."
+    ], 3000, ()=> {
+      showChoices([{ text: "← Step back into the mist", action: ()=> window.location.href = "perfect_path.html" }]);
+    });
+    return;
+  }
+
+  // Track that all memories collected (achievement)
+  if (window.unlockAchievement) {
+    window.unlockAchievement('memory_complete');
+  }
+
+  // Player has all memories — begin final confrontation
+  const intro = [
+    "The air tightens. The river below rises as if drawn toward you.",
+    "Every fragment glows — the Still Water, the Heart, the Journal, the Mark, the Rust — pulsing in sync.",
+    "From the fog, the Shade emerges. Its outline is wrong — too human, too familiar."
+  ];
+  pulseText(intro, 3000, ()=> {
+    const p = document.createElement("p");
+    p.className = "fade-line shade-glow";
+    p.innerHTML = "\"You did this,\" it whispers. \"You broke the world again.\"";
+    document.getElementById("dynamic").appendChild(p);
+    setTimeout(()=> {
+      p.style.opacity = 1;
+      setTimeout(()=> startConfrontation(), 4000);
+    }, 100);
+  });
+}
+
+function startConfrontation(){
+  const seq = [
+    "\"You think you're free?\" the Shade screams.",
+    "\"Every time you wake, it begins again! Every cycle, every whisper — you made me!\"",
+    "The words tear through the fog — but they sound like your own voice.",
+    "The reflection in the water changes. It's you. It's always been you.",
+    "The Shade steps closer — or maybe you do."
+  ];
+  pulseText(seq, 3500, ()=> {
+    showChoices([
+      { text: "👁️ Face the Shade", action: faceShade },
+      { text: "⬅️ Step back", action: ()=> window.location.href = "perfect_path.html" }
+    ]);
+  });
+}
+
+function faceShade(){
+  const seq = [
+    "You reach out — your hands shaking. The fog curls around both of you.",
+    "\"You were never fighting me,\" the Shade says. The voice is broken now.",
+    "\"You were fighting the part that wanted to end. The part that thought you were unworthy.\"",
+    "\"But you kept walking. Even when the water rose. Even when you couldn't see the sky.\"",
+    "The bridge trembles beneath your feet. Light gathers — not white, but the color of dawn."
+  ];
+  pulseText(seq, 3500, ()=> {
+    setTimeout(()=> {
+      const final = document.createElement("p");
+      final.className = "fade-line";
+      final.style.opacity = 1;
+      final.innerHTML = "<em>The Shade reaches out — not to drag you down, but to steady you.</em><br><strong>You take its hand.</strong><br>And the world falls silent.";
+      document.getElementById("dynamic").appendChild(final);
+
+      // Mark perfect path complete for achievement
+      localStorage.setItem("perfectPathComplete", "true");
+      
+      // Track perfect ending achievement (will fire in perfect_end.html)
+      console.log("Perfect Bridge confrontation complete");
+
+      // After fade, move to perfect_end (the awakening scene)
+      setTimeout(()=> {
+        showChoices([
+          { text: "✨ Close your eyes...", action: ()=> window.location.href = "perfect_end.html" }
+        ]);
+      }, 7000);
+    }, 3000);
+  });
+}
+
+// ---------- Init ----------
+document.addEventListener("DOMContentLoaded", ()=> {
+  // Fade in lead paragraphs
+  setTimeout(() => document.getElementById('lead-1').style.opacity = 1, 300);
+  setTimeout(() => document.getElementById('lead-2').style.opacity = 1, 1500);
+  
+  setTimeout(() => beginBridge(), 2500);
+});
+</script>
+
+<script src="scene-logic.js"></script>
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

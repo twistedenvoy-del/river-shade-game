@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Riverbank</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+@keyframes rippleDistort {
+  0% { filter: none; opacity: 1; }
+  50% { filter: blur(2px) brightness(0.8); opacity: 0.6; }
+  100% { filter: none; opacity: 1; }
+}
+.distort { 
+  animation: rippleDistort 3s ease-in-out; 
+}
+.fade-black {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.95) 80%);
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  z-index: 9999;
+}
+.fade-black.active { 
+  opacity: 1; 
+}
+.pickup-fade {
+  position: fixed;
+  inset: 0;
+  background: black;
+  opacity: 0;
+  transition: opacity 0.75s ease-in-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+.pickup-fade.active { 
+  opacity: 1; 
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+.choice {
+  display: block;
+  color: #9cf;
+  text-decoration: none;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover {
+  background: rgba(156,207,255,0.1);
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+</style>
+</head>
+
+<body data-scene="riverbank">
+
+<section class="scene-text" id="sceneText">
+  <p>The riverbank remembers your name though you never spoke it. Mud clings to your boots like fingerprints from a life you haven't lived.</p>
+  <p>When the moon slips behind clouds, the water offers a face – for a blink, you see someone standing behind you, and your reflection pretends not to notice.</p>
+</section>
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<div class="container">
+  <h1>The Riverbank</h1>
+  <p class="event" id="intro">
+    The fog parts to reveal the slow shimmer of water.  
+    It waits for you – patient, knowing.
+  </p>
+
+  <a class="choice" id="reachOut">✋ Reach out to the water</a>
+  <a class="choice" href="bridge.html" id="bridgeLink">🌉 Return to the Bridge</a>
+  <a class="choice" href="tavern.html" id="tavernLink">🍺 Go to the Tavern</a>
+  <a class="choice" id="pickupKey" style="display:none;">🗝️ Take the Rusty Key</a>
+</div>
+
+<div id="inventory-box"></div>
+
+<script>
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Reach-Out Death Sequence ===
+document.getElementById('reachOut').addEventListener('click', e => {
+  e.preventDefault();
+
+  try {
+    const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+    const alreadyDied = !!flags.diedAtRiverbank;
+    const textBox = document.getElementById('sceneText');
+
+    let playerName = '';
+    try {
+      playerName = localStorage.getItem('playerName') || '';
+      playerName = playerName.trim();
+    } catch(e) {}
+
+    // === SECOND DEATH (Already died once) - UNLOCK ACHIEVEMENT & TRACK ===
+    if (alreadyDied) {
+      // Unlock the double drowned achievement
+      if (window.unlockAchievement) {
+        window.unlockAchievement('double_drowned');
+      }
+      
+      // FIXED: Track the death for statistics
+      if (window.trackDeath) {
+        window.trackDeath('riverbank_second');
+      }
+      
+      textBox.innerHTML = `
+        <p>The river stirs, but the reflection will not meet your eyes.</p>
+        <p>It turns away, as if ashamed of what it did to you.</p>
+        <p>A whisper brushes your ear: <em>"Not again. Please, not again."</em></p>
+        <p>The water stills as if nothing had ever lived here.</p>
+      `;
+      textBox.classList.add('distort');
+      
+      const overlay = document.createElement('div');
+      overlay.className = 'fade-black';
+      document.body.appendChild(overlay);
+      
+      setTimeout(() => overlay.classList.add('active'), 3000);
+      setTimeout(() => { window.location.href = 'index.html'; }, 6500);
+      return;
+    }
+
+    // === FIRST DEATH - TRACKED ===
+    const container = document.querySelector('.container');
+    container.innerHTML = '';
+
+    textBox.innerHTML = `
+      <p>You kneel beside the river, hands trembling in the cold air.</p>
+      <p>The surface trembles, reflecting a face that isn't moving like yours.</p>
+    `;
+
+    setTimeout(() => {
+      textBox.innerHTML += `<p>You blink – your reflection doesn't.</p>`;
+    }, 2500);
+
+    setTimeout(() => {
+      textBox.innerHTML += `<p>It tilts its head and smiles, but your mouth stays still.</p>`;
+    }, 5000);
+
+    setTimeout(() => {
+      textBox.innerHTML += `<p>The smile widens, stretching too far, water bending like skin stretched over bone.</p>`;
+    }, 7500);
+
+    setTimeout(() => {
+      textBox.innerHTML += `<p>The reflection moves before you do – lunging upward.</p>`;
+    }, 10000);
+
+    setTimeout(() => {
+      textBox.innerHTML += `<p>The surface breaks – cold hands drag you down into black.</p>`;
+    }, 12500);
+
+    setTimeout(() => {
+      const fade = document.createElement('div');
+      fade.className = 'fade-black';
+      document.body.appendChild(fade);
+      setTimeout(() => fade.classList.add('active'), 500);
+
+      setTimeout(() => {
+        textBox.innerHTML = `
+          <p>You are weightless. The river has no bottom, only a pulse.</p>
+          <p>A figure moves through the murk – the same reflection, the same smile.</p>
+          <p><em>"You never left${playerName ? ', ' + playerName : ''}."</em></p>
+          <p>Its hands close around your throat. Darkness blossoms.</p>
+        `;
+      }, 2500);
+
+      setTimeout(() => {
+        // Track unique death - FIRST RIVERBANK DEATH
+        if (window.trackDeath) {
+          window.trackDeath('riverbank_first');
+        }
+        
+        fade.classList.add('active');
+        setTimeout(() => location.assign('shade_encounter.html'), 4500);
+      }, 8500);
+
+      // Mark death flag
+      flags.diedAtRiverbank = true;
+      localStorage.setItem('rflags', JSON.stringify(flags));
+    }, 15500);
+
+  } catch(err) {
+    console.error("Death sequence error:", err);
+  }
+});
+
+// === Navigation & Key Pickup Logic ===
+(function() {
+  try {
+    const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+    const cameFromHaunt = !!flags.fromHaunt;
+    const cameFromIndex = !cameFromHaunt && !flags.visitedRiverbank;
+    
+    const bridgeLink = document.getElementById('bridgeLink');
+    const tavernLink = document.getElementById('tavernLink');
+    const pickupKey = document.getElementById('pickupKey');
+    const reachOut = document.getElementById('reachOut');
+
+    // Coming from haunt - show exploration options
+    if (cameFromHaunt) {
+      if (reachOut) reachOut.style.display = 'none';
+      if (bridgeLink) bridgeLink.style.display = '';
+      if (tavernLink) tavernLink.style.display = '';
+      if (pickupKey) pickupKey.style.display = '';
+      
+      // Fade-in whisper
+      const whisper = document.createElement('p');
+      whisper.innerHTML = "<em>The fog remembers your voice...</em>";
+      whisper.style.opacity = "0";
+      whisper.style.transition = "opacity 3s ease";
+      whisper.style.textAlign = "center";
+      whisper.style.marginTop = "1rem";
+      whisper.style.fontStyle = "italic";
+      whisper.style.color = "#9ab";
+      const textBlock = document.getElementById('sceneText');
+      textBlock.appendChild(whisper);
+      setTimeout(() => whisper.style.opacity = "1", 500);
+      
+      // Clear flag
+      flags.fromHaunt = false;
+      localStorage.setItem('rflags', JSON.stringify(flags));
+    } 
+    // Coming from index - only show death option
+    else if (cameFromIndex) {
+      if (bridgeLink) bridgeLink.style.display = 'none';
+      if (tavernLink) tavernLink.style.display = 'none';
+      if (pickupKey) pickupKey.style.display = 'none';
+    } 
+    // Normal visit - hide death option
+    else {
+      if (reachOut) reachOut.style.display = 'none';
+      if (pickupKey) pickupKey.style.display = '';
+    }
+
+    // Hide key if already picked up
+    const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+    const hasKey = inv.some(item => {
+      const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+      return val.toLowerCase().includes('key') || val.toLowerCase().includes('rust');
+    });
+    
+    if (hasKey && pickupKey) {
+      pickupKey.style.display = 'none';
+    }
+
+    // === Rusty Key Pickup ===
+    if (pickupKey) {
+      pickupKey.addEventListener('click', function(e) {
+        e.preventDefault();
+        const scene = document.getElementById('sceneText');
+        scene.innerHTML += `
+          <p>Half-buried in river silt, a corroded key catches at the light – too deliberate to be chance.</p>
+          <p>Your fingers close around cold metal. It hums faintly, as if recognizing your touch.</p>
+        `;
+        
+        const fade = document.createElement('div');
+        fade.className = 'pickup-fade';
+        document.body.appendChild(fade);
+        setTimeout(() => fade.classList.add('active'), 75);
+        
+        setTimeout(() => {
+          const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+          if (!inv.some(item => {
+            const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+            return val.toLowerCase().includes('key');
+          })) {
+            inv.push({id: 'rusty_key', name: 'Rusty Key'});
+            localStorage.setItem('inventory', JSON.stringify(inv));
+            
+            // Track achievement
+            if (window.trackItemCollected) {
+              window.trackItemCollected('rusty_key');
+            }
+          }
+          refreshInventoryBoxSafe();
+          fade.classList.remove('active');
+          setTimeout(() => fade.remove(), 750);
+          this.style.display = 'none';
+        }, 700);
+      });
+    }
+
+    // Mark as visited
+    flags.visitedRiverbank = true;
+    localStorage.setItem('rflags', JSON.stringify(flags));
+
+  } catch(e) {
+    console.error("Riverbank setup error:", e);
+  }
+})();
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Shade Encounter</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: radial-gradient(ellipse at center, #000 0%, #0a0a0a 60%, #000 100%);
+  color: #ddd;
+  overflow-x: hidden;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 700px;
+  margin: 10% auto;
+  text-align: center;
+  line-height: 1.8;
+}
+.scene-text p { 
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: fadeIn 2s ease forwards;
+}
+.scene-text p:nth-child(1) { animation-delay: 0s; }
+.scene-text p:nth-child(2) { animation-delay: 1.5s; }
+.scene-text p:nth-child(3) { animation-delay: 3s; }
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding-top: 2rem;
+}
+.choice {
+  display: block;
+  margin: 1.5rem auto;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: none;
+  color: #9cf;
+  background: rgba(156,207,255,0.08);
+  padding: 0.6em 1.2em;
+  border-radius: 8px;
+  border: 1px solid #9cf;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover { 
+  background: rgba(156,207,255,0.2); 
+}
+.fade-black {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.98) 90%);
+  opacity: 0;
+  transition: opacity 3s ease-in-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+.fade-black.active { 
+  opacity: 1; 
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+</style>
+</head>
+
+<body data-scene="shade_encounter">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<section class="scene-text" id="sceneText">
+  <p>Silence swallows the current.</p>
+  <p>Light bends above you, fractured and far away.</p>
+  <p>Something moves – just out of focus – its shape mirroring yours too well.</p>
+</section>
+
+<div class="container" id="choiceBox" style="display:none;">
+  <a class="choice" href="#" id="reach">✋ Reach toward the figure</a>
+  <a class="choice" href="#" id="escape">🏃 Try to escape</a>
+</div>
+
+<div id="inventory-box"></div>
+
+<script>
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Get player name for personalization ===
+let playerName = '';
+try {
+  playerName = localStorage.getItem('playerName') || '';
+  playerName = playerName.trim();
+} catch(e) {}
+
+// === Sequence fade-in ===
+setTimeout(() => {
+  const sceneText = document.getElementById('sceneText');
+  const p1 = document.createElement('p');
+  p1.innerHTML = "The figure opens its eyes – your eyes.";
+  p1.style.animationDelay = "0s";
+  sceneText.appendChild(p1);
+  
+  const p2 = document.createElement('p');
+  p2.innerHTML = `A whisper blooms in the water: <em>"You never left${playerName ? ', ' + playerName : ''}."</em>`;
+  p2.style.animationDelay = "1.5s";
+  sceneText.appendChild(p2);
+}, 4000);
+
+setTimeout(() => {
+  document.getElementById('choiceBox').style.display = 'block';
+}, 7000);
+
+// === Fade transition to Awakening ===
+function fadeToAwakening() {
+  const fade = document.createElement('div');
+  fade.className = 'fade-black';
+  document.body.appendChild(fade);
+  setTimeout(() => fade.classList.add('active'), 100);
+
+  setTimeout(() => {
+    window.location.href = 'awakening.html';
+  }, 3500);
+}
+
+// === Choice reactions ===
+document.getElementById('reach').addEventListener('click', (e) => {
+  e.preventDefault();
+  const sceneText = document.getElementById('sceneText');
+  sceneText.innerHTML = `
+    <p style="animation: fadeIn 2s ease 0s forwards;">You reach forward, your hand trembling in the cold dark.</p>
+    <p style="animation: fadeIn 2s ease 1.5s forwards;">The shape mirrors you again – then moves faster.</p>
+    <p style="animation: fadeIn 2s ease 3s forwards;">Fingers, colder than the river, seize your wrist.</p>
+    <p style="animation: fadeIn 2s ease 4.5s forwards;">The world folds inward.</p>
+  `;
+  document.getElementById('choiceBox').style.display = 'none';
+  
+  // TRACK DEATH - Reaching toward shade
+  if (window.trackDeath) {
+    window.trackDeath('shade_reach');
+  }
+  
+  setTimeout(fadeToAwakening, 9000);
+});
+
+document.getElementById('escape').addEventListener('click', (e) => {
+  e.preventDefault();
+  const sceneText = document.getElementById('sceneText');
+  sceneText.innerHTML = `
+    <p style="animation: fadeIn 2s ease 0s forwards;">You kick upward – the surface gleams above, impossibly far.</p>
+    <p style="animation: fadeIn 2s ease 1.5s forwards;">The water thickens around you, clutching at your limbs.</p>
+    <p style="animation: fadeIn 2s ease 3s forwards;">A hand closes around your ankle.</p>
+    <p style="animation: fadeIn 2s ease 4.5s forwards;"><em>"You cannot flee yourself."</em></p>
+  `;
+  document.getElementById('choiceBox').style.display = 'none';
+  
+  // TRACK DEATH - Trying to escape shade
+  if (window.trackDeath) {
+    window.trackDeath('shade_escape');
+  }
+  
+  setTimeout(fadeToAwakening, 9000);
+});
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

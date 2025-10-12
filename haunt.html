@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – The Haunt</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+@keyframes shadePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; filter: brightness(1.2); }
+}
+body[data-scene="haunt"] {
+  animation: shadePulse 5s infinite ease-in-out;
+  transition: background-color 3s ease;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+  margin-bottom: 2rem;
+}
+.container {
+  max-width: 760px;
+  margin: 0 auto;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.choice {
+  display: block;
+  color: #9cf;
+  text-decoration: none;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover {
+  background: rgba(156,207,255,0.1);
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.shade-fade {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 90%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2s ease;
+  z-index: 9998;
+}
+.shade-fade.active { 
+  opacity: 1; 
+}
+.event {
+  margin: 2rem auto;
+  line-height: 1.8;
+}
+.fade-in {
+  opacity: 1;
+  animation: fadeIn 2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.choice-hint {
+  font-size: 0.85em;
+  color: #9ab;
+  font-style: italic;
+  margin-top: 0.3rem;
+}
+</style>
+</head>
+
+<body data-scene="haunt">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<section class="scene-text">
+  <p>Something in the room answers before you speak. The air is thicker, as if sound has weight; your steps echo like proof you existed. Details arrive late – a child's toy, a second set of footprints – and it is impossible to decide which is the lie. Keep your hands visible.</p>
+</section>
+
+<div class="container">
+  <h1 class="header-title">The Haunt</h1>
+  <p class="event" id="intro">
+    The fog folds into itself, breathing like a sleeping thing.<br/>
+    Footsteps echo – not yours – circling in the dark.<br/><br/>
+    You call out, but your voice returns softer, lower… wrong.<br/>
+    <em>Something in the mist knows your name.</em>
+  </p>
+
+  <div class="fade-in" id="choices">
+    <a class="choice" href="#" id="toRiverbank">
+      🌊 Follow the voice toward the Riverbank
+      <div class="choice-hint">It knows your name - almost kindly</div>
+    </a>
+    
+    <a class="choice" href="#" id="toBridge">
+      🌉 Flee back across the Bridge
+      <div class="choice-hint">The planks remember your footsteps</div>
+    </a>
+    
+    <a class="choice" href="#" id="toBadEnd">
+      👁 Linger in the silence
+      <div class="choice-hint">Something in the stillness wants to speak</div>
+    </a>
+  </div>
+</div>
+
+<div class="shade-fade" id="shadeOverlay"></div>
+<div id="inventory-box"></div>
+
+<script>
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Haunting transitions ===
+const overlay = document.getElementById("shadeOverlay");
+
+function handleTransition(destination) {
+  overlay.classList.add("active");
+
+  const whisper = document.createElement("div");
+  whisper.id = "bottomWhisper";
+  whisper.innerHTML = "<em>The Shade follows...</em>";
+  whisper.style.position = "fixed";
+  whisper.style.bottom = "10px";
+  whisper.style.left = "50%";
+  whisper.style.transform = "translateX(-50%)";
+  whisper.style.opacity = "0";
+  whisper.style.transition = "opacity 2s ease";
+  whisper.style.color = "rgba(255,255,255,0.6)";
+  whisper.style.zIndex = "9999";
+  document.body.appendChild(whisper);
+  setTimeout(() => (whisper.style.opacity = 1), 200);
+
+  setTimeout(() => {
+    location.href = destination;
+  }, 2500);
+}
+
+// === To Riverbank ===
+document.getElementById("toRiverbank").addEventListener("click", (e) => {
+  e.preventDefault();
+  
+  // Mark origin flags
+  try {
+    const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+    flags.fromHaunt = true;
+    flags.hauntWhisper = true;
+    localStorage.setItem('rflags', JSON.stringify(flags));
+  } catch(err) {
+    console.warn("Could not set haunt flags:", err);
+  }
+  
+  handleTransition("riverbank.html");
+});
+
+// === To Bridge ===
+document.getElementById("toBridge").addEventListener("click", (e) => {
+  e.preventDefault();
+  handleTransition("bridge.html");
+});
+
+// === To Bad Ending ===
+document.getElementById("toBadEnd").addEventListener("click", (e) => {
+  e.preventDefault();
+  handleTransition("bad_ending.html");
+});
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

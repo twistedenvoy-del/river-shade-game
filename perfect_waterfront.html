@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Perfect Waterfront</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ddd;
+  font-family: 'Georgia', serif;
+  text-align: center;
+  padding: 2em;
+}
+.scene-text { 
+  max-width: 760px; 
+  margin: 0 auto;
+  line-height: 1.8;
+}
+.choice { 
+  display: block; 
+  color: #9cf; 
+  text-decoration: none; 
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover { 
+  background: rgba(156,207,255,0.1);
+}
+.fade-line { 
+  opacity: 0; 
+  transition: opacity 2.8s ease; 
+  margin: 1.5em 0; 
+  color: #ddd; 
+}
+#inventory-box {
+  position: fixed; 
+  bottom: 1rem; 
+  right: 1rem;
+  background: rgba(0,0,0,0.6); 
+  border: 1px solid #888;
+  padding: .5rem 1rem; 
+  font-family: monospace; 
+  color: #eee;
+  border-radius: 8px;
+  z-index: 1000;
+  max-width: 260px;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+.mark-appear {
+  animation: pulseMark 2s infinite;
+  color: #c44;
+  font-weight: bold;
+}
+@keyframes pulseMark {
+  0% { opacity: 1; text-shadow: 0 0 0px rgba(255,80,80,0.0); }
+  50% { opacity: 0.7; text-shadow: 0 0 14px rgba(255,0,0,0.2); }
+  100% { opacity: 1; text-shadow: 0 0 0px rgba(255,80,80,0.0); }
+}
+#memory-alert {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg,#062134,#0f2740);
+  color: #cfeafc;
+  padding: 10px 18px;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity .6s;
+  z-index: 2100;
+  font-family: monospace;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #9cf;
+  text-shadow: 0 0 20px rgba(156,207,255,0.3);
+}
+</style>
+</head>
+
+<body data-scene="perfect_waterfront">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<main class="scene-text">
+  <h1>The Perfect Waterfront</h1>
+
+  <p class="fade-line" id="lead-1">The water is still tonight. Too still.</p>
+  <p class="fade-line" id="lead-2">The reflection doesn't match the sky — it stares back with your eyes, waiting.</p>
+
+  <div id="dynamic"></div>
+
+  <div id="choices" style="margin-top:1.5rem;"></div>
+</main>
+
+<div id="inventory-box"></div>
+<div id="memory-alert">✦ The Haunt stirs with recognition...</div>
+
+<script>
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// Mark as visited
+localStorage.setItem('visited_waterfront', 'true');
+localStorage.setItem('last_perfect_visit', 'perfect_waterfront');
+
+// Unlock waterfront access
+localStorage.setItem('perfectWaterfrontUnlocked', 'true');
+
+// ---------- Utility ----------
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if(!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+
+function addItemToInventory(item){
+  const raw = localStorage.getItem("inventory") || "[]";
+  let inv;
+  try{ inv = JSON.parse(raw); } catch(e){ inv = []; }
+  if(!inv.some(i => (i.id || i).toString() === item.id)){
+    inv.push(item);
+    localStorage.setItem("inventory", JSON.stringify(inv));
+    
+    // Track achievement
+    if (window.trackItemCollected) {
+      window.trackItemCollected(item.id);
+    }
+    
+    refreshInventoryBoxSafe();
+    return true;
+  }
+  return false;
+}
+
+function pulseText(lines, delay = 2800, onDone = null){
+  const container = document.getElementById("dynamic");
+  container.innerHTML = "";
+  lines.forEach((txt, i) => {
+    const p = document.createElement("p");
+    p.className = "fade-line";
+    p.innerHTML = txt;
+    container.appendChild(p);
+    setTimeout(()=> p.style.opacity = 1, i * delay);
+  });
+  if(onDone) setTimeout(onDone, lines.length * delay + 600);
+}
+
+function showChoices(options){
+  const div = document.getElementById("choices");
+  div.innerHTML = "";
+  options.forEach(opt => {
+    const a = document.createElement("a");
+    a.href = "#";
+    a.className = "choice";
+    a.textContent = opt.text;
+    a.onclick = (e) => { e.preventDefault(); opt.action(); };
+    div.appendChild(a);
+  });
+}
+
+// ---------- Scene Logic ----------
+function beginWaterfront(){
+  const intro = [
+    "You kneel at the edge of the river. The surface is glass. You can see every scar.",
+    "There's no sound. No insects, no wind. Only a faint whisper beneath the waterline.",
+    "It says your name — but it's your voice that speaks it."
+  ];
+  pulseText(intro, 3000, ()=> {
+    showChoices([
+      { text: "🌊 Reach toward your reflection", action: reachReflection },
+      { text: "⬅️ Step back", action: ()=> window.location.href = "perfect_path.html" }
+    ]);
+  });
+  refreshInventoryBoxSafe();
+}
+
+function reachReflection(){
+  const seq = [
+    "The water trembles — not from your hand, but from something within it.",
+    "You touch the surface. It's warm. The reflection smiles, but you do not.",
+    "A scream erupts inside your skull — the Shade's voice, cracking like ice.",
+    "\"No! You cannot take what is mine!\"",
+    "The surface bursts upward — a wave of black light that brands your skin."
+  ];
+  pulseText(seq, 3000, ()=> {
+    // Give player the Shade's Mark
+    const added = addItemToInventory({ id: "shade_mark", name: "Fragment of the Shade's Mark" });
+    const mark = document.createElement("p");
+    mark.className = "fade-line mark-appear";
+    mark.innerHTML = added 
+      ? "<strong>A searing symbol burns into your arm — the Shade's Mark.</strong>"
+      : "<strong>The Mark burns brighter, remembering this moment.</strong>";
+    document.getElementById("dynamic").appendChild(mark);
+
+    setTimeout(()=> {
+      // Show alert about the Haunt
+      const alert = document.getElementById('memory-alert');
+      alert.style.opacity = '1';
+      setTimeout(()=> alert.style.opacity = '0', 3500);
+
+      pulseText([
+        "The Shade howls — not from power, but from fear.",
+        "\"You were never meant to leave me.\"",
+        "\"You think this is over? You think I will fade?\"",
+        "Its voice shatters into echoes. The water stills again — but your reflection stays smiling.",
+        "<em>The Mark pulses with dark energy. Perhaps it holds power elsewhere...</em>"
+      ], 3000, ()=> {
+        showChoices([
+          { text: "← Return to the River Shade", action: ()=> window.location.href = "perfect_path.html" }
+        ]);
+      });
+    }, 2400);
+  });
+}
+
+// ---------- Init ----------
+document.addEventListener("DOMContentLoaded", ()=> {
+  // Fade in lead paragraphs
+  setTimeout(() => document.getElementById('lead-1').style.opacity = 1, 300);
+  setTimeout(() => document.getElementById('lead-2').style.opacity = 1, 1500);
+  
+  setTimeout(() => beginWaterfront(), 2500);
+});
+</script>
+
+<script src="scene-logic.js"></script>
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

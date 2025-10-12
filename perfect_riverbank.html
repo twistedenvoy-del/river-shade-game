@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Perfect Riverbank</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<script src="scene-logic.js"></script>
+<style>
+body {
+  background: #000;
+  color: #ddd;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.choice {
+  display:block;
+  color:#9cf;
+  text-decoration:none;
+  margin:1em 0;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+}
+.choice:hover {opacity:.8;}
+.fade-line {
+  opacity:0;
+  transition:opacity 1s ease;
+  margin:1em 0;
+}
+#inventory-box {
+  position:fixed;
+  bottom:1rem;
+  right:1rem;
+  background:rgba(0,0,0,0.6);
+  border:1px solid #888;
+  padding:.5rem 1rem;
+  font-family:monospace;
+  color:#eee;
+  border-radius:8px;
+  z-index:1000;
+}
+.memory-line {
+  opacity:0;
+  text-align:center;
+  font-style:italic;
+  color:#cdeeff;
+  margin:1em 0;
+  transition:opacity 2.5s ease;
+}
+#memory-alert {
+  position:fixed;
+  bottom:70px;
+  right:30px;
+  background:rgba(180,220,255,0.15);
+  border:1px solid #80d4ff;
+  color:#b9e6ff;
+  padding:12px 20px;
+  border-radius:10px;
+  font-size:16px;
+  font-style:italic;
+  text-shadow:0 0 6px #66ccff;
+  opacity:0;
+  transition:opacity 1s ease-in-out;
+  z-index:999;
+}
+#scene > p {
+  opacity: 0;
+  animation: fadeInText 1.5s ease forwards;
+}
+#scene > p:nth-child(2) {
+  animation-delay: 0.5s;
+}
+#scene > p:nth-child(3) {
+  animation-delay: 1s;
+}
+@keyframes fadeInText {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+</style>
+</head>
+
+<body data-scene="perfect_riverbank">
+<section id="scene" class="scene-text">
+  <h1>The Perfect Riverbank</h1>
+  <p>The current doesn't move until you look away.</p>
+  <p>When you look back, the reflection smiles first.</p>
+
+  <div id="shade-dialogue"></div>
+  <div id="player-choices"></div>
+</section>
+
+<div id="memory-alert"></div>
+<div id="inventory-box"></div>
+
+<script>
+// Mark as visited
+localStorage.setItem("visited_riverbank","true");
+localStorage.setItem("last_perfect_visit","perfect_riverbank");
+
+function pulseLines(lines, delay=2200, onDone=null) {
+  const container = document.getElementById("shade-dialogue");
+  if(!container) {
+    console.error("shade-dialogue container not found!");
+    return;
+  }
+  container.innerHTML = ""; // Clear any existing content
+  lines.forEach((text, i) => {
+    const p = document.createElement("p");
+    p.className = "fade-line";
+    p.innerHTML = `<em>${text}</em>`;
+    container.appendChild(p);
+    setTimeout(()=>{
+      p.style.opacity = 1;
+      console.log("Fading in line:", text); // Debug
+    }, i*delay);
+  });
+  if (onDone) setTimeout(onDone, lines.length*delay + 1000);
+}
+
+function refreshInventory(){
+  const box=document.getElementById("inventory-box");
+  const inv=JSON.parse(localStorage.getItem("inventory")||"[]");
+  box.innerHTML="<strong>Inventory</strong><br>"+(inv.length?inv.map(i=>i.name||i.id).join("<br>"):"(empty)");
+}
+
+function addItemToInventory(item){
+  let inv=JSON.parse(localStorage.getItem("inventory")||"[]");
+  if(!inv.some(i=>i.id===item.id)){
+    inv.push(item);
+    localStorage.setItem("inventory",JSON.stringify(inv));
+    refreshInventory();
+    return true;
+  }
+  return false;
+}
+
+function showMemoryAlert(text){
+  const el=document.getElementById("memory-alert");
+  el.textContent="✦ "+text;
+  el.style.opacity=1;
+  setTimeout(()=>el.style.opacity=0,3000);
+}
+
+function showChoices(options){
+  const div=document.getElementById("player-choices");
+  div.innerHTML="";
+  options.forEach(opt=>{
+    const a=document.createElement("a");
+    a.href="#";
+    a.className="choice";
+    a.textContent=opt.text;
+    a.onclick=(e)=>{e.preventDefault();opt.action();};
+    div.appendChild(a);
+  });
+}
+
+function beginScene(){
+  console.log("beginScene called"); // Debug
+  // Fade in the opening paragraphs first
+  setTimeout(()=>{
+    console.log("Starting shade dialogue"); // Debug
+    const shadeLines = [
+      "You think this time is different?",
+      "You always do.",
+      "But I remember how it ends."
+    ];
+
+    pulseLines(shadeLines, 2200, ()=>{
+      console.log("Showing choices"); // Debug
+      showChoices([
+        {text:"Look into the water", action:lookIntoWater}
+      ]);
+    });
+  }, 2500); // Wait for the initial p tags to fade in
+}
+
+function lookIntoWater(){
+  const div=document.getElementById("shade-dialogue");
+  const p=document.createElement("p");
+  p.className="fade-line";
+  p.textContent="The reflection doesn't mimic you. It waits for you to move first.";
+  div.appendChild(p);
+  setTimeout(()=>p.style.opacity=1, 50);
+  
+  showChoices([
+    {text:"Reach into the water", action:reachWater}
+  ]);
+}
+
+function reachWater(){
+  const div=document.getElementById("shade-dialogue");
+  div.innerHTML="";
+  
+  const inv = JSON.parse(localStorage.getItem("inventory")||"[]");
+  const hasKey = inv.some(i => {
+    const name = (i.name||i.id||"").toLowerCase();
+    return name.includes("rust") || name.includes("key");
+  });
+  const hasCoin = inv.some(i => {
+    const name = (i.name||i.id||"").toLowerCase();
+    return name.includes("still water") || name.includes("coin");
+  });
+
+  // FIRST: If player has key, unlock the memory
+  if(hasKey && localStorage.getItem('memory_riverbank') !== 'true'){
+    showMemoryAlert("Memory stirs... The Unopened Door");
+    
+    // SET ALL THE FLAGS - both naming conventions
+    localStorage.setItem('memory_riverbank', 'true');
+    localStorage.setItem('riverbankMemoryUnlocked', 'true');
+    localStorage.setItem('perfectCellarUnlocked', 'true');
+    localStorage.setItem('perfectTownUnlocked', 'true');
+    localStorage.setItem('visited_cellar', 'true');
+    localStorage.setItem('visited_town', 'true');
+    
+    const memoryLines=[
+      "<strong><em>Memory of the Unopened Door</em></strong>",
+      "\"You were afraid to open it once,\" the Shade murmurs, its voice gentler now, rippling like the water itself.",
+      "\"You told yourself it was safer not to look beyond—but doors remember.\"",
+      "The current stills completely, holding your gaze until you realize it waits for you to move first."
+    ];
+    
+    memoryLines.forEach((line,i)=>{
+      const p=document.createElement("p");
+      p.className="memory-line";
+      p.innerHTML=line;
+      div.appendChild(p);
+      setTimeout(()=>p.style.opacity=1,i*2500);
+    });
+    
+    setTimeout(()=>{
+      const link=document.createElement("a");
+      link.href="perfect_path.html";
+      link.className="choice";
+      link.textContent="Step away from the river";
+      div.appendChild(link);
+    },memoryLines.length*2500+1000);
+    return;
+  }
+  
+  // SECOND: If player already has key AND memory, just show completion text
+  if(hasKey && localStorage.getItem('memory_riverbank') === 'true'){
+    const p=document.createElement("p");
+    p.className="fade-line";
+    p.style.opacity=1;
+    p.innerHTML="<em>The water remembers your touch. The memory lingers, refusing to fade.</em>";
+    div.appendChild(p);
+    
+    showChoices([
+      {text:"Return to the River Shade", action:()=>window.location.href="perfect_path.html"}
+    ]);
+    return;
+  }
+
+  // THIRD: Default flow - give the coin
+  const lines=[
+    "The water feels solid and wrong.",
+    "Something cold coils around your wrist.",
+    "A whisper cuts through the surface— \"You shouldn't have taken that.\""
+  ];
+  
+  pulseLines(lines,2000,()=>{
+    const gained = addItemToInventory({id:"coin", name:"Fragment of Still Water"});
+    const p=document.createElement("p");
+    p.className="fade-line";
+    p.style.opacity=1;
+    p.innerHTML = gained
+      ? "<em>You draw your hand back clutching a sliver that glows like frozen moonlight.</em>"
+      : "<em>The fragment hums faintly in your palm, remembering your touch.</em>";
+    div.appendChild(p);
+
+    setTimeout(()=>{
+      const end=document.createElement("p");
+      end.className="fade-line";
+      end.style.opacity=1;
+      end.textContent="The river trembles, as if afraid of what you've done.";
+      div.appendChild(end);
+      
+      setTimeout(()=>{
+        const hint=document.createElement("p");
+        hint.className="fade-line";
+        hint.style.opacity=1;
+        hint.innerHTML="<em>Perhaps if you had something to unlock its secrets...</em>";
+        div.appendChild(hint);
+        
+        showChoices([
+          {text:"Return to the River Shade", action:()=>window.location.href="perfect_path.html"}
+        ]);
+      }, 1500);
+    }, 1000);
+  });
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  refreshInventory();
+  beginScene();
+});
+</script>
+</body>
+</html>

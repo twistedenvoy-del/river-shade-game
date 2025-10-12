@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – True Alt Ending</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background-color: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.fade-line { 
+  opacity: 0; 
+  transition: opacity 2.5s ease; 
+  margin: 1.5em 0;
+  line-height: 1.8;
+}
+#continue-link {
+  display: none;
+  margin-top: 3em;
+  text-decoration: none;
+  color: #9cf;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.8rem 2rem;
+  border: 1px solid #69a;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(60,80,120,0.2), rgba(40,60,100,0.3));
+  box-shadow: 0 0 20px rgba(100,150,200,0.4);
+  transition: all 0.5s;
+  display: inline-block;
+  opacity: 0;
+}
+#continue-link.show {
+  opacity: 1;
+}
+#continue-link:hover {
+  box-shadow: 0 0 30px rgba(100,150,200,0.6);
+  background: linear-gradient(135deg, rgba(70,90,130,0.3), rgba(50,70,110,0.4));
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.shade-fade {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.98) 90%);
+  opacity: 0;
+  transition: opacity 3s ease;
+  pointer-events: none;
+  z-index: 9998;
+}
+.shade-fade.active {
+  opacity: 1;
+}
+.error-message {
+  color: #f99;
+  font-style: italic;
+  margin: 2rem 0;
+}
+</style>
+</head>
+
+<body data-scene="true_alt_ending">
+
+<section class="scene-text" id="scene">
+  <!-- Content loaded after validation -->
+</section>
+
+<div class="shade-fade" id="overlay"></div>
+<div id="inventory-box"></div>
+
+<script>
+// === PROGRESSION GATE CHECK ===
+// This ensures players can only reach this ending through the proper sequence
+function validateProgression() {
+  const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+  
+  // Check 1: Must have River's Heart (proves they did the cellar sequence)
+  const hasHeart = inv.some(item => {
+    const name = (typeof item === 'string') ? item : (item && item.name ? item.name : '');
+    return name.toLowerCase().includes('heart') || name.toLowerCase().includes('river');
+  });
+  
+  // Check 2: Must have investigated bridge (proves they saw the lore reveal)
+  const bridgeInvestigated = localStorage.getItem('bridgeInvestigated') === 'true';
+  
+  // Check 3: Must have at least 4 items (proves significant exploration)
+  const itemCount = inv.length;
+  
+  console.log("Progression Check:", {
+    hasHeart,
+    bridgeInvestigated,
+    itemCount,
+    valid: hasHeart && bridgeInvestigated && itemCount >= 4
+  });
+  
+  // If any check fails, redirect back to cellar
+  if (!hasHeart) {
+    console.warn("Missing River's Heart - redirecting to cellar");
+    showErrorAndRedirect("The whisper fades... you need something that pulses with the river's memory.");
+    return false;
+  }
+  
+  if (!bridgeInvestigated) {
+    console.warn("Bridge not investigated - redirecting");
+    showErrorAndRedirect("The current pulls you back... you haven't heard the full story yet.");
+    return false;
+  }
+  
+  if (itemCount < 4) {
+    console.warn("Not enough items collected - redirecting");
+    showErrorAndRedirect("You're missing too many pieces... the whisper cannot form.");
+    return false;
+  }
+  
+  return true;
+}
+
+function showErrorAndRedirect(message) {
+  const scene = document.getElementById('scene');
+  scene.innerHTML = `
+    <p class="error-message">${message}</p>
+    <p style="margin-top:2rem;"><a href="cellar.html" style="color:#9cf;">Return to the Cellar</a></p>
+  `;
+}
+
+// === ONLY RUN IF VALIDATION PASSES ===
+if (validateProgression()) {
+  
+  function refreshInventoryBoxSafe(){
+    const box = document.getElementById("inventory-box");
+    if (!box) return;
+    try {
+      const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+      const displayItems = inv.map(item => {
+        if (typeof item === 'string') return item;
+        if (item && item.name) return item.name;
+        return String(item);
+      });
+      box.innerHTML = "<strong>Inventory</strong><br>" + (displayItems.length ? displayItems.join("<br>") : "(empty)");
+    } catch(e) {
+      box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+    }
+  }
+  refreshInventoryBoxSafe();
+
+  const scene = document.getElementById("scene");
+
+  // fade-in helper
+  function showLines(lines, delay = 3500, finalAction = null){
+    scene.innerHTML = '<p>You feel the cellar air tighten. The River\'s Heart in your hand beats once, twice – like something waking beneath your skin.</p>';
+    
+    lines.forEach((t, i) => {
+      const p = document.createElement("p");
+      p.className = "fade-line";
+      p.innerHTML = t;
+      scene.appendChild(p);
+      setTimeout(() => p.style.opacity = 1, i * delay);
+    });
+    if (finalAction) setTimeout(finalAction, lines.length * delay + 2500);
+  }
+
+  // narrative
+  const lines = [
+    "The shadows bend inward, their edges glimmering faintly like the river's surface at dusk.",
+    "A voice breathes from the walls – nowhere and everywhere at once.",
+    "<em>\"So you finally listen…\"</em>",
+    "It is the Shade's voice – quieter now, patient.",
+    "<em>\"You hold what was lost. The River's Heart remembers every name it has drowned.\"</em>",
+    "The air grows heavy, the hum of the amulet vibrating through your bones.",
+    "<em>\"Each echo you carry – the journal's confession, the coin's price, the key's denial – they were all pieces of me.\"</em>",
+    "The light from the Heart spills upward, forming a mirrored shape before you. A face begins to surface – your face, and not your face.",
+    "It smiles.",
+    "<em>\"I am what remains when the river remembers itself,\"</em> it murmurs. <em>\"And now, you are too.\"</em>",
+    "The reflection leans closer. The lantern flickers out.",
+    "Darkness folds in – but for a heartbeat, the current pauses.",
+    "<em>\"The cycle breaks when you stop running from yourself,\"</em> it whispers.",
+    "The ground softens beneath you. Water rushes upward, warm as breath.",
+    "Then silence.",
+    "The river exhales. Something shifts in the space between breaths.",
+    "<em>\"Follow the memory – if you still wish to remember who you were before the drowning.\"</em>"
+  ];
+
+  // show lines, then reveal continue link
+  showLines(lines, 3500, () => {
+    const link = document.createElement("a");
+    link.id = "continue-link";
+    link.href = "#";
+    link.innerHTML = "✦ Follow the Memory ✦";
+    
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      
+      console.log("Transitioning to Perfect Path - preserving inventory and setting flags...");
+      
+      // Mark that we completed true alt ending (for stinger)
+      try {
+        const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+        flags.trueAltComplete = true;
+        flags.remembered = true;
+        localStorage.setItem('rflags', JSON.stringify(flags));
+      } catch(err) {
+        console.warn("Could not set trueAltComplete flag:", err);
+      }
+      
+      // Mark perfect route as unlocked (inventory preserved)
+      localStorage.setItem("perfectUnlocked", "true");
+      
+      // Clear any old flags that might interfere
+      localStorage.removeItem("cellarSearched");
+      localStorage.removeItem("bridgeInvestigated");
+      localStorage.removeItem("bridgeVisitCount");
+      
+      // Set flag for perfect path start
+      localStorage.setItem("perfectPathActive", "true");
+      
+      console.log("Inventory preserved. Perfect Path unlocked. Transitioning...");
+      
+      // Fade transition
+      const overlay = document.getElementById("overlay");
+      overlay.classList.add("active");
+      
+      setTimeout(() => {
+        window.location.href = "perfect_path.html";
+      }, 3000);
+    });
+    
+    scene.appendChild(link);
+    
+    setTimeout(() => {
+      link.classList.add("show");
+    }, 500);
+    
+    console.log("True Alt Ending complete - Perfect Path will be available");
+  });
+}
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Awakening</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: radial-gradient(ellipse at center, #000 0%, #0a0a0a 60%, #000 100%);
+  color: #ddd;
+  overflow-x: hidden;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 700px;
+  margin: 10% auto;
+  text-align: center;
+  line-height: 1.8;
+}
+.scene-text p { 
+  margin-bottom: 1rem;
+  opacity: 0;
+  animation: fadeIn 2s ease forwards;
+}
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding-top: 2rem;
+  opacity: 0;
+  animation: fadeIn 2s ease 4.5s forwards;
+}
+.choice {
+  display: block;
+  margin: 1.5rem auto;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: none;
+  color: #9cf;
+  background: rgba(156,207,255,0.08);
+  padding: 0.6em 1.2em;
+  border-radius: 8px;
+  border: 1px solid #9cf;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover { 
+  background: rgba(156,207,255,0.2); 
+}
+.fade-black {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.98) 90%);
+  opacity: 0;
+  transition: opacity 3s ease-in-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+.fade-black.active { 
+  opacity: 1; 
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+h1 {
+  margin-bottom: 2rem;
+}
+.meta-hint {
+  color: #9ab;
+  font-style: italic;
+  font-size: 0.9em;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(156,207,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(156,207,255,0.15);
+  line-height: 1.6;
+}
+</style>
+</head>
+
+<body data-scene="awakening">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<section class="scene-text" id="sceneText">
+  <!-- Content will be dynamically loaded based on death count -->
+</section>
+
+<div class="container" id="choiceBox">
+  <!-- Choices will be dynamically added based on death count -->
+</div>
+
+<div id="inventory-box"></div>
+
+<script>
+// === DEATH NARRATIVES ===
+const deathNarratives = {
+  0: {
+    title: "First Awakening",
+    lines: [
+      {text: "The darkness recedes, slowly, like a tide unsure whether to return.", delay: 0},
+      {text: "You awaken on cold ground, soaked to the bone, lungs heavy with silence.", delay: 1.5},
+      {text: "The river hums somewhere nearby – patient, watching.", delay: 3},
+      {text: "Something cold rests in your palm. A mark you don't remember receiving.", delay: 4.5}
+    ],
+    hasContinue: true,
+    givesMark: true,
+    showHint: true // NEW: Show meta hint after first death
+  },
+  1: {
+    title: "Second Awakening",
+    lines: [
+      {text: "You wake with water in your lungs, coughing up river fog.", delay: 0},
+      {text: "The same stones press against your back. The same darkness above.", delay: 1.5},
+      {text: "But something is different – the mark on your palm throbs faintly.", delay: 3},
+      {text: "Your reflection lingers in the puddles, watching you rise.", delay: 4.5},
+      {text: "<em>\"Again?\"</em> it mouths silently.", delay: 6}
+    ],
+    hasContinue: false
+  },
+  2: {
+    title: "Third Awakening",
+    lines: [
+      {text: "The cold is familiar now. Expected.", delay: 0},
+      {text: "You don't remember falling asleep, but you remember drowning.", delay: 1.5},
+      {text: "The voice that spoke to you – it sounded like concern. Or mockery.", delay: 3},
+      {text: "You can't tell the difference anymore.", delay: 4.5},
+      {text: "The mark burns. The river whispers. You stand.", delay: 6}
+    ],
+    hasContinue: false
+  },
+  3: {
+    title: "Fourth Awakening",
+    lines: [
+      {text: "Your hands remember the cold before your mind does.", delay: 0},
+      {text: "How many times have you walked these stones? How many times drowned?", delay: 1.5},
+      {text: "The reflection in the water doesn't look surprised anymore.", delay: 3},
+      {text: "It looks tired. Like it's been waiting for you to understand.", delay: 4.5},
+      {text: "<em>\"The river keeps count better than you do,\"</em> you hear yourself say.", delay: 6}
+    ],
+    hasContinue: false
+  },
+  4: {
+    title: "Fifth Awakening",
+    lines: [
+      {text: "The world feels thinner here. Like paper worn translucent.", delay: 0},
+      {text: "You see through the fog now – shapes moving just beyond sight.", delay: 1.5},
+      {text: "Others like you. Or what you were. Or what you will become.", delay: 3},
+      {text: "They don't speak. They don't need to.", delay: 4.5},
+      {text: "You all know the same truth: the river is patient.", delay: 6},
+      {text: "And it remembers every voice that gave up mid-scream.", delay: 7.5}
+    ],
+    hasContinue: false
+  },
+  5: {
+    title: "Sixth Awakening",
+    lines: [
+      {text: "You wake standing this time.", delay: 0},
+      {text: "The transition from drowning to breathing happens without pause.", delay: 1.5},
+      {text: "The Shade sits on a fallen log nearby, waiting.", delay: 3},
+      {text: "It doesn't smile. It doesn't need to.", delay: 4.5},
+      {text: "<em>\"You're getting closer to understanding,\"</em> it says.", delay: 6},
+      {text: "<em>\"Or further. It's hard to tell the difference down here.\"</em>", delay: 7.5},
+      {text: "You realize: it's not mocking you. It's afraid.", delay: 9}
+    ],
+    hasContinue: false
+  },
+  6: {
+    title: "Seventh Awakening",
+    lines: [
+      {text: "The river doesn't pull you under this time.", delay: 0},
+      {text: "You simply... wake. As if death was only ever a suggestion.", delay: 1.5},
+      {text: "The Shade kneels beside you, its reflection finally matching its movement.", delay: 3},
+      {text: "<em>\"I can't keep doing this,\"</em> it whispers.", delay: 4.5},
+      {text: "You realize it's talking to itself. Or to you. Same thing.", delay: 6},
+      {text: "The mark on your palm glows steady now. Not a wound. A compass.", delay: 7.5},
+      {text: "Maybe it's time to stop running from what you already carry.", delay: 9}
+    ],
+    hasContinue: false
+  },
+  default: {
+    title: "Awakening",
+    lines: [
+      {text: "The cycle continues.", delay: 0},
+      {text: "Wake. Walk. Choose. Drown.", delay: 1.5},
+      {text: "The river keeps perfect count, even if you've lost track.", delay: 3},
+      {text: "Each time, you remember a little less. Or is it more?", delay: 4.5},
+      {text: "The Shade doesn't taunt anymore. It looks worried.", delay: 6},
+      {text: "\"How many times until you understand?\" it asks.", delay: 7.5},
+      {text: "You don't have an answer. You never do.", delay: 9}
+    ],
+    hasContinue: false
+  }
+};
+
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Load narrative based on death count ===
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+    const deathCount = parseInt(flags.deathCount || "0", 10);
+    
+    console.log("Awakening - Death count:", deathCount);
+    
+    // Get appropriate narrative
+    const narrative = deathNarratives[deathCount] || deathNarratives.default;
+    
+    // Set title
+    const title = document.createElement('h1');
+    title.textContent = narrative.title;
+    document.getElementById('sceneText').prepend(title);
+    
+    // Display narrative lines with staggered animation
+    const sceneText = document.getElementById("sceneText");
+    
+    narrative.lines.forEach((line, index) => {
+      const p = document.createElement('p');
+      p.innerHTML = line.text;
+      p.style.animationDelay = `${line.delay}s`;
+      sceneText.appendChild(p);
+    });
+    
+    // Build choices
+    const choiceBox = document.getElementById("choiceBox");
+    const lastLineDelay = narrative.lines[narrative.lines.length - 1].delay;
+    choiceBox.style.animationDelay = `${lastLineDelay + 1.5}s`;
+    
+    // FIRST DEATH ONLY - Show Continue Wandering option + Give Shade's Mark + Meta Hint
+    if (narrative.hasContinue && narrative.givesMark) {
+      const wanderLink = document.createElement("a");
+      wanderLink.className = "choice";
+      wanderLink.href = "#";
+      wanderLink.id = "continueWander";
+      wanderLink.textContent = "🌑 Continue Wandering";
+      choiceBox.appendChild(wanderLink);
+      
+      wanderLink.addEventListener("click", handleContinueWander);
+      
+      // Add meta hint about deaths being content
+      if (narrative.showHint) {
+        const hint = document.createElement("div");
+        hint.className = "meta-hint";
+        hint.innerHTML = "<em>The river remembers you now. Each time you wake, you understand a little more.<br><br>Death here is not an ending—it's a conversation. The Shade speaks differently each time you meet.</em>";
+        choiceBox.appendChild(hint);
+      }
+    }
+    
+    // Always show Begin Again
+    const beginLink = document.createElement("a");
+    beginLink.className = "choice";
+    beginLink.href = "index.html";
+    beginLink.textContent = "🌀 Begin Again";
+    choiceBox.appendChild(beginLink);
+    
+    // Increment death count for next time
+    flags.deathCount = deathCount + 1;
+    localStorage.setItem('rflags', JSON.stringify(flags));
+    
+    // Track death achievement
+    if (window.trackDeath) {
+      window.trackDeath(deathCount);
+    }
+    
+  } catch(e) {
+    console.error("Awakening setup error:", e);
+  }
+});
+
+// === Continue Wandering with The Shade's Mark (First Death Only) ===
+function handleContinueWander(e) {
+  e.preventDefault();
+
+  const sceneText = document.getElementById("sceneText");
+  sceneText.innerHTML = '';
+  
+  const title = document.createElement('h1');
+  title.textContent = 'The Mark';
+  sceneText.appendChild(title);
+  
+  const lines = [
+    "You walk until the ground no longer feels real.",
+    "The air smells the same – river-water and iron.",
+    "Through the mist, a lantern burns in the distance, swaying as if it remembers you.",
+    "At your feet, something glints – a smooth stone, black as the river at midnight.",
+    "Its surface bears a faint mark – a spiral that never ends, still wet as if freshly carved.",
+    "It hums, almost inaudibly, like a thought whispering from deep water.",
+    "<em>The Shade's Mark</em> rests cold in your palm.",
+    "A voice drifts behind you: <em>\"Welcome back.\"</em>"
+  ];
+  
+  lines.forEach((text, i) => {
+    const p = document.createElement('p');
+    p.style.opacity = 0;
+    p.style.transition = 'opacity 2s ease';
+    p.style.margin = '1.5em 0';
+    p.innerHTML = text;
+    sceneText.appendChild(p);
+    setTimeout(() => p.style.opacity = 1, i * 2500);
+  });
+
+  // Hide choices
+  document.getElementById("choiceBox").style.display = "none";
+
+  // Add The Shade's Mark to inventory
+  try {
+    const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
+    const hasMark = inv.some(item => {
+      const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+      return val.toLowerCase().includes('mark') || val.toLowerCase().includes('shade');
+    });
+    
+    if (!hasMark) {
+      inv.push({id: 'shades_mark', name: "The Shade's Mark"});
+      localStorage.setItem('inventory', JSON.stringify(inv));
+      console.log("Added 'The Shade's Mark' to inventory.");
+      refreshInventoryBoxSafe();
+      
+      // Track achievement
+      if (window.trackItemCollected) {
+        window.trackItemCollected('shades_mark');
+      }
+    }
+  } catch (err) {
+    console.warn("Could not save The Shade's Mark:", err);
+  }
+
+  // Fade and return to index
+  const fade = document.createElement("div");
+  fade.className = "fade-black";
+  document.body.appendChild(fade);
+
+  setTimeout(() => fade.classList.add("active"), lines.length * 2500);
+  setTimeout(() => { location.assign("index.html"); }, lines.length * 2500 + 3000);
+}
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

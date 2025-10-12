@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Running Across the Bridge</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+  margin-bottom: 2rem;
+}
+.scene-text p {
+  margin: 1.5rem 0;
+  opacity: 0;
+  animation: fadeIn 2s ease forwards;
+}
+.scene-text p:nth-child(1) { animation-delay: 0s; }
+.scene-text p:nth-child(2) { animation-delay: 1.5s; }
+.scene-text p:nth-child(3) { animation-delay: 3s; }
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+.container {
+  max-width: 760px;
+  margin: 0 auto;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #ddd;
+}
+h2 {
+  text-align: center;
+  margin: 2rem 0 1rem 0;
+  color: #aaa;
+  font-size: 1.3rem;
+}
+.choice {
+  display: block;
+  color: #9cf;
+  text-decoration: none;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover {
+  background: rgba(156,207,255,0.1);
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+.shade-fade {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.95) 90%);
+  opacity: 0;
+  transition: opacity 2s ease;
+  pointer-events: none;
+  z-index: 9998;
+}
+.shade-fade.active {
+  opacity: 1;
+}
+</style>
+</head>
+
+<body data-scene="run">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<section class="scene-text">
+  <p>Your legs remember how to move in a way your mind does not. Breath comes in sharp paper-rips; each exhale leaves a smell like burned sugar. Behind you, footsteps keep a careful distance, learning your rhythm.</p>
+</section>
+
+<div class="container">
+  <h1>Running Across the Bridge</h1>
+  
+  <div class="scene-text">
+    <p>You don't think — you just run.</p>
+    <p>The bridge groans beneath your feet, every plank slick with dew and age.<br/>
+       The fog surges after you, thicker now, like hands reaching through the air.</p>
+    <p>Something moves beneath the boards — a hollow splash, too heavy to be a fish.<br/>
+       The whisper rises again, fractured between your footsteps.<br/>
+       It almost sounds like laughter.</p>
+  </div>
+
+  <!-- Content will be dynamically loaded based on inventory -->
+  <div id="outcomeContent"></div>
+</div>
+
+<div id="inventory-box"></div>
+
+<script>
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Item check helper ===
+function hasItem(itemName) {
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    return inv.some(item => {
+      const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+      return val.toLowerCase().includes(itemName.toLowerCase());
+    });
+  } catch(e) {
+    return false;
+  }
+}
+
+// === Check for protection items ===
+const hasHeart = hasItem("heart") || hasItem("river");
+const hasJournal = hasItem("journal");
+const hasKey = hasItem("key") || hasItem("rust");
+const hasMark = hasItem("mark") || hasItem("shade");
+
+// Any protective item counts
+const hasProtection = hasHeart || hasJournal || hasKey || hasMark;
+
+// Check if Shade is following (from haunt or previous death)
+const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+const shadeFollowing = !!flags.shadeFollowing || !!flags.diedAtRiverbank;
+
+// === Determine outcome ===
+const outcomeContent = document.getElementById("outcomeContent");
+
+if (hasProtection) {
+  // === SAFE ENDING (Has protection) ===
+  outcomeContent.innerHTML = `
+    <div class="scene-text">
+      <p style="animation-delay: 4.5s;">You stumble onto the far side and collapse onto the wet grass.</p>
+      <p style="animation-delay: 6s;">When you look back, the bridge is empty — but something feels different.</p>
+      <p style="animation-delay: 7.5s;">A ripple crosses the river, slow and deliberate.</p>
+      ${hasHeart ? '<p style="animation-delay: 9s;">The River\'s Heart pulses warmly against your chest, its glow steady and reassuring.</p>' : ''}
+      ${hasJournal ? '<p style="animation-delay: 9s;">The journal in your possession grows warm, as if remembering.</p>' : ''}
+      ${hasMark ? '<p style="animation-delay: 9s;">The Shade\'s Mark on your palm glows faintly, acknowledging what follows.</p>' : ''}
+    </div>
+    
+    <a class="choice" href="haunt.html">🌫️ Continue to the Haunt</a>
+    <a class="choice" href="bridge.html">🌉 Back to the Bridge</a>
+  `;
+} else if (shadeFollowing) {
+  // === SHADE REMEMBERS (Died before, no protection) ===
+  outcomeContent.innerHTML = `
+    <div class="scene-text">
+      <p style="animation-delay: 4.5s;">You reach the end of the bridge, heart hammering.</p>
+      <p style="animation-delay: 6s;">The fog doesn't chase you this time.</p>
+      <p style="animation-delay: 7.5s;">It moves aside, parting like curtains at a stage.</p>
+      <p style="animation-delay: 9s;">When you glance back, you see the bridge shimmering faintly.</p>
+      <p style="animation-delay: 10.5s;">Your reflection in the water below is still running.<br/>
+         But you stopped moving minutes ago.</p>
+    </div>
+    
+    <h2>🌫️ The River Remembers You</h2>
+    
+    <a class="choice" href="haunt.html">🌫️ Continue to the Haunt</a>
+    <a class="choice" href="bridge.html">🌉 Back to the Bridge</a>
+  `;
+} else {
+  // === HAUNTED ENDING (No protection, first escape) ===
+  outcomeContent.innerHTML = `
+    <div class="scene-text">
+      <p style="animation-delay: 4.5s;">You reach the end of the bridge, heart hammering — but the fog follows.</p>
+      <p style="animation-delay: 6s;">It doesn't break. It clings.</p>
+      <p style="animation-delay: 7.5s;">You swear you feel it breathe against your neck.</p>
+      <p style="animation-delay: 9s;">A whisper curls behind your ear: <em>"You shouldn't have looked away."</em></p>
+      <p style="animation-delay: 10.5s;">When you turn, nothing's there — except your reflection in the water below.</p>
+      <p style="animation-delay: 12s;">It's still running.</p>
+    </div>
+    
+    <h2>🌫️ You Escaped, But Not Unseen</h2>
+    
+    <a class="choice" href="haunt.html">🌫️ Continue to the Haunt</a>
+    <a class="choice" href="bridge.html">🌉 Back to the Bridge</a>
+  `;
+  
+  // Mark that Shade is now following
+  try {
+    flags.shadeFollowing = true;
+    localStorage.setItem('rflags', JSON.stringify(flags));
+  } catch(e) {
+    console.warn("Could not set Shade following flag:", e);
+  }
+}
+
+// Fade in the outcome content
+setTimeout(() => {
+  const overlay = document.createElement('div');
+  overlay.className = 'shade-fade';
+  document.body.appendChild(overlay);
+  
+  setTimeout(() => {
+    overlay.classList.add('active');
+  }, 100);
+  
+  setTimeout(() => {
+    overlay.classList.remove('active');
+  }, 2000);
+}, 1000);
+</script>
+
+<script src="scene-logic.js"></script>
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

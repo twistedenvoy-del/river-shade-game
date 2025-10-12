@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Tavern</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+  margin-bottom: 2rem;
+}
+.choice {
+  display: block;
+  color: #9cf;
+  text-decoration: none;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+}
+.choice:hover {
+  background: rgba(156,207,255,0.1);
+}
+.pickup-fade {
+  position: fixed;
+  inset: 0;
+  background: black;
+  opacity: 0;
+  transition: opacity 0.75s ease-in-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+.pickup-fade.active { 
+  opacity: 1; 
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+.faintwhisper {
+  opacity: 0;
+  text-align: center;
+  font-style: italic;
+  color: #b0d8ff;
+  text-shadow: 0 0 8px #4c607a;
+  transition: opacity 4s ease;
+  margin: 2rem 0;
+}
+.fade-line {
+  opacity: 0;
+  transition: opacity 2s ease;
+  margin: 1.5em 0;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.whisper-atmosphere {
+  color: #aab;
+  font-style: italic;
+  margin: 1.5rem 0;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+</style>
+</head>
+
+<body data-scene="tavern">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<section class="scene-text" id="sceneText">
+  <p>The tavern smells of damp wood and old smoke – not the comfort of a hearth, but the lingering scent of something that burned too long ago to remember.</p>
+  <p>Shadows cling to the corners, thicker than they should be, whispering names you don't remember speaking.</p>
+  <p>The floorboards creak beneath your weight, but the sound comes from the wrong direction, as if someone else is walking parallel to you, just out of sight.</p>
+</section>
+
+<h1>The Tavern</h1>
+
+<div id="content">
+  <!-- Whisper atmosphere section (appears conditionally) -->
+  <div id="whisperAtmosphere" style="display:none;"></div>
+  
+  <a href="town.html" class="choice">🏙️ Return to Town</a>
+  <a href="cellar.html" class="choice">🔒 Descend into the Cellar</a>
+</div>
+
+<div id="inventory-box"></div>
+
+<script>
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Check for items and flags ===
+window.addEventListener("DOMContentLoaded", () => {
+  try {
+    const scene = document.getElementById("sceneText");
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    
+    // Check for coin
+    const hasCoin = inv.some(i => {
+      const val = (typeof i === 'string') ? i : (i.name || i.id || '');
+      return val.toLowerCase().includes("coin") || val.toLowerCase().includes("silver");
+    });
+    
+    // Check for journal
+    const hasJournal = inv.some(i => {
+      const val = (typeof i === 'string') ? i : (i.name || i.id || '');
+      return val.toLowerCase().includes("journal");
+    });
+    
+    const bridgeInvestigated = localStorage.getItem("bridgeInvestigated") === "true";
+    const whisperHeard = localStorage.getItem("tavernWhisperHeard") === "true";
+    const shadeAware = localStorage.getItem("shadeAware") === "true";
+    const perfectHint = localStorage.getItem("perfectHint") === "true";
+    const tavernVisited = localStorage.getItem("tavernVisited") === "true";
+
+    // === Silver Coin Discovery (only if bridge investigated) ===
+    if (bridgeInvestigated && !hasCoin) {
+      const coinHint = document.createElement("p");
+      coinHint.innerHTML = "<em>Something glints faintly beneath a loose floorboard near the bar – a silver coin, old and cold.</em><br><em>You don't remember dropping it.</em>";
+      coinHint.style.marginTop = "1.5rem";
+      scene.appendChild(coinHint);
+
+      const coinLink = document.createElement("a");
+      coinLink.href = "#";
+      coinLink.id = "pickupCoin";
+      coinLink.className = "choice";
+      coinLink.textContent = "🪙 Pick up the Silver Coin";
+      scene.appendChild(coinLink);
+
+      coinLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        
+        const fade = document.createElement("div");
+        fade.className = "pickup-fade";
+        document.body.appendChild(fade);
+        setTimeout(() => fade.classList.add("active"), 75);
+        
+        setTimeout(() => {
+          const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+          if (!inv.some(i => {
+            const val = (typeof i === 'string') ? i : (i.name || i.id || '');
+            return val.toLowerCase().includes("coin");
+          })) {
+            inv.push({id: "silver_coin", name: "Silver Coin"});
+            localStorage.setItem("inventory", JSON.stringify(inv));
+            
+            // Track achievement
+            if (window.trackItemCollected) {
+              window.trackItemCollected('silver_coin');
+            }
+          }
+          
+          refreshInventoryBoxSafe();
+          fade.classList.remove("active");
+          setTimeout(() => fade.remove(), 750);
+          
+          coinLink.remove();
+          coinHint.innerHTML = "<em>You lift the coin. It's colder than it should be, as if it's been waiting for you.</em><br><em>The air in the tavern grows heavier, watching.</em>";
+        }, 700);
+      });
+    }
+
+    // === UPDATED: Whisper Death Option ===
+    const hasAnyItems = inv.length > 0;
+    if (tavernVisited || hasAnyItems) {
+      // Add atmospheric setup first
+      const whisperAtmosphere = document.getElementById('whisperAtmosphere');
+      whisperAtmosphere.style.display = 'block';
+      whisperAtmosphere.innerHTML = `
+        <p class="whisper-atmosphere">
+          The walls murmur softly, words just beneath hearing. 
+          If you listen carefully, you might understand what they're trying to say...
+        </p>
+      `;
+      
+      // Fade in the atmosphere text
+      setTimeout(() => {
+        const atmosphereText = whisperAtmosphere.querySelector('.whisper-atmosphere');
+        if (atmosphereText) atmosphereText.style.opacity = 1;
+      }, 500);
+      
+      // Add the choice after atmosphere
+      setTimeout(() => {
+        const content = document.getElementById("content");
+        
+        const whisperChoice = document.createElement("a");
+        whisperChoice.href = "#";
+        whisperChoice.id = "listenToWhispers";
+        whisperChoice.className = "choice"; // Standard blue, not red
+        whisperChoice.textContent = "👂 Listen carefully to the whispers";
+        
+        // Insert at the beginning of content
+        content.insertBefore(whisperChoice, content.firstChild);
+        
+        whisperChoice.addEventListener("click", (e) => {
+          e.preventDefault();
+          triggerWhisperDeath();
+        });
+      }, 1500);
+    }
+
+    // === Whisper System (atmospheric progression) ===
+    if (!whisperHeard && (hasJournal || hasCoin || bridgeInvestigated)) {
+      const whisper = document.createElement("p");
+      whisper.className = "faintwhisper";
+
+      let text = "";
+
+      // Default whisper (has items but no deep lore yet)
+      if (!shadeAware && !perfectHint) {
+        text = "<em>\"You brought it back... it still remembers you.\"</em>";
+      }
+      // Shade-aware variant (saw reflection dialogue at bridge)
+      else if (shadeAware && !perfectHint) {
+        text = "<em>\"It followed you from the river... can you hear it breathing through the floorboards?\"</em>";
+      }
+      // Perfect-hint variant (bridge told you about cellar)
+      else if (shadeAware && perfectHint) {
+        text = `
+          <em>"It isn't whispering anymore."</em><br>
+          <em>"It's listening. Through you."</em><br>
+          <em>"The next time the water calls, don't answer too soon."</em>
+        `;
+      }
+
+      whisper.innerHTML = text;
+      scene.appendChild(whisper);
+      
+      setTimeout(() => whisper.style.opacity = "1", 1500);
+      setTimeout(() => {
+        whisper.style.opacity = "0";
+        localStorage.setItem("tavernWhisperHeard", "true");
+      }, 12000);
+    }
+    
+  } catch(err) {
+    console.error("Tavern setup error:", err);
+  }
+});
+
+// === Whisper Death Sequence ===
+function triggerWhisperDeath() {
+  const scene = document.getElementById('sceneText');
+  scene.innerHTML = '';
+  
+  const lines = [
+    "You close your eyes and let the whispers wash over you.",
+    "At first, they're just noise—meaningless sounds echoing through empty rooms.",
+    "But then you start to hear the words.",
+    "They know your name. They know your fears. Every mistake you've tried to forget.",
+    "The voice grows louder—not from the walls, but from inside your own skull.",
+    "It sounds like you. It <em>is</em> you.",
+    "<em>\"You were always going to fail. You know that, don't you?\"</em>",
+    "You try to argue back, but the voice knows every defense you could possibly make.",
+    "It's been with you longer than anyone else. It knows you better than you know yourself.",
+    "The tavern dissolves. There is only the voice, and the endless dark.",
+    "You realize you can't remember the last time you heard any other sound."
+  ];
+  
+  lines.forEach((text, i) => {
+    const p = document.createElement('p');
+    p.className = 'fade-line';
+    p.innerHTML = text;
+    scene.appendChild(p);
+    setTimeout(() => p.style.opacity = 1, i * 2500);
+  });
+  
+  setTimeout(() => {
+    // Track unique death
+    if (window.trackDeath) {
+      window.trackDeath('tavern_whispers');
+    }
+    
+    const fade = document.createElement('div');
+    fade.className = 'pickup-fade';
+    document.body.appendChild(fade);
+    setTimeout(() => fade.classList.add('active'), 100);
+    
+    setTimeout(() => {
+      window.location.href = 'awakening.html';
+    }, 2000);
+  }, lines.length * 2500);
+}
+
+// === Mark tavern as visited ===
+try {
+  const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+  flags.visitedTavern = true;
+  localStorage.setItem('rflags', JSON.stringify(flags));
+  localStorage.setItem('tavernVisited', 'true');
+} catch(e) {}
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

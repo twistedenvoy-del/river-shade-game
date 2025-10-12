@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Perfect Ending</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ddd;
+  font-family: "Georgia", serif;
+  text-align: center;
+  padding: 3em;
+}
+.scene-text { max-width: 760px; margin: 0 auto; }
+.line { opacity: 0; transition: opacity 1.8s ease; margin: 1em 0; }
+.woman { color: #9da3ff; }
+.woman2 { color: #b8a3ff; }
+.player { color: #7a8a99; }
+.shade { color: #d66; }
+button.next {
+  display: none !important;
+}
+#dialogue p {
+  margin: 1.5em 0;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+#closing-note {
+  opacity: 0;
+  transition: opacity 3s ease;
+  margin-top: 3em;
+  font-size: 1em;
+  color: #fff;
+  font-weight: normal;
+  line-height: 1.8;
+}
+#begin-again {
+  opacity: 0;
+  transition: opacity 3s ease;
+  margin-top: 2em;
+  font-size: 1.1em;
+}
+#begin-again a {
+  color: #fff;
+  text-decoration: none;
+  border: 2px solid #fff;
+  padding: 0.6rem 2rem;
+  border-radius: 8px;
+  display: inline-block;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+#begin-again a:hover {
+  background: rgba(255,255,255,0.1);
+}
+</style>
+</head>
+<body>
+<main class="scene-text">
+  <h1>The Awakening</h1>
+  <div id="dialogue"></div>
+  <button id="next" class="next" style="display:none;">Next</button>
+  <div id="closing-note"></div>
+  <div id="begin-again"></div>
+</main>
+
+<script>
+let index = 0;
+const lines = [
+  {text:'(A faint white glow pushes through the darkness...)', delay: 3500},
+  {text:'(The player opens their eyes slowly. The ceiling comes into focus.)', delay: 3500},
+  {text:'woman one: "I thought you\'d never wake up, love."', cls:'woman', delay: 3000},
+  {text:'woman two: "Yeah, you seemed to be having a very bad dream... want to talk about it?"', cls:'woman', delay: 3500},
+  {text:'Player (pauses, ready to say no like he always does, but then reconsiders...): "Yeah... that would be good."', cls:'player', delay: 4000},
+  {text:'(He tells them everything that happened – from the first crossroads to the final confrontation.)', delay: 4000},
+  {text:'(Later, he rises, walking to the bathroom. The sink runs, cold water over trembling hands.)', delay: 4000},
+  {text:'(He looks up – his reflection smiles first.)', delay: 3000},
+  {text:'Shade: "You didn\'t think you would get rid of me so easily, did you?"', cls:'shade', delay: 3500},
+  {text:'Player: "Of course not..."', cls:'player', delay: 2500},
+  {text:'(He hears his loved ones laughing in the other room – a warm sound.)', delay: 3500},
+  {text:'Player: "But now... I am not alone, and you have no control."', cls:'player', delay: 3500},
+  {text:'Player (softly, to the mirror): "Welcome home, Shade."', cls:'player', delay: 4000},
+  {text:'(The reflection smiles one last time before fading to white...)', delay: 4000}
+];
+
+function showNext() {
+  if (index === 0) {
+    // Begin fade to white transition gradually after a few lines
+    setTimeout(() => document.body.classList.add("fade-white"), 25000);
+  }
+  
+  if (index >= lines.length) {
+    showClosingNote();
+    return;
+  }
+  
+  const currentLine = lines[index];
+  const d = document.getElementById("dialogue");
+  const p = document.createElement("p");
+  p.className = "line " + (currentLine.cls || "");
+  p.innerHTML = currentLine.text;
+  d.appendChild(p);
+  
+  setTimeout(() => {
+    p.style.opacity = 1;
+    console.log("Showing line", index + 1, "of", lines.length);
+  }, 100);
+  
+  index++;
+  
+  // Auto-advance to next line after delay
+  setTimeout(() => {
+    showNext();
+  }, currentLine.delay);
+}
+
+function showClosingNote() {
+  console.log("Showing closing note");
+  const note = document.getElementById("closing-note");
+  note.innerHTML = `
+    <p><em>The River Shade</em> is a reflection on living with Borderline Personality Disorder and Depression –
+    the constant dialogue between fear and acceptance, self-doubt and recovery.<br><br>
+    This ending is not about erasing the darkness, but learning to coexist with it.</p>
+  `;
+  setTimeout(() => {
+    note.style.opacity = 1;
+    // Fade in Begin Again after note appears
+    setTimeout(showBeginAgain, 5000);
+  }, 2000);
+}
+
+function showBeginAgain() {
+  console.log("Showing begin again link");
+  const restart = document.getElementById("begin-again");
+  restart.innerHTML = `<p><a href="stinger.html" id="restartLink">Begin Again</a></p>`;
+// Stinger handles the clearin
+  setTimeout(() => (restart.style.opacity = 1), 100);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Perfect End loaded - starting automatic sequence");
+  // Start the sequence after a brief pause
+  setTimeout(() => {
+    showNext();
+  }, 1000);
+});
+</script>
+</body>
+</html>

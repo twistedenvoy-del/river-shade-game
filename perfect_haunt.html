@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Perfect Haunt</title>
+<link rel="stylesheet" href="style.css">
+    <link href="mobile.css" rel="stylesheet"/>
+<script src="scene-logic.js"></script>
+<style>
+body {
+  background:#000; color:#ccc; font-family:'Georgia',serif;
+  text-align:center; padding:2em; opacity:0;
+  animation: veilFade 1.5s forwards ease;
+}
+@keyframes veilFade { from {opacity:0;} to {opacity:1;} }
+.choice{display:block;color:#9cf;text-decoration:none;margin:1em 0;}
+.choice:hover{opacity:.8;}
+.fade-line{opacity:0;transition:opacity 2.5s ease;margin:1em 0;}
+#inventory-box{
+  position:fixed;bottom:1rem;right:1rem;
+  background:rgba(0,0,0,0.6);border:1px solid #888;
+  padding:.6rem 1rem;border-radius:8px;
+  font-family:monospace;color:#eee;z-index:1000;max-width:260px;
+}
+#memory-alert{
+  position:fixed;right:1rem;bottom:4.7rem;
+  background:rgba(0,0,0,0.6);border:1px solid #aaf;
+  color:#e8e8ff;text-shadow:0 0 6px #aaf;
+  padding:.5rem .75rem;border-radius:8px;
+  font-family:Georgia,serif;font-size:.95rem;
+  opacity:0;transform:translateY(6px);
+  pointer-events:none;z-index:1001;
+}
+#memory-alert.show{
+  transition:opacity .45s ease,transform .45s ease;
+  opacity:1;transform:translateY(0);
+}
+#fade-overlay{
+  position:fixed;left:0;top:0;width:100%;height:100%;
+  background:#000;opacity:0;pointer-events:none;
+  z-index:2000;transition:opacity 2.2s ease;
+}
+#memory-text{
+  position:fixed;top:40%;width:100%;text-align:center;
+  font-size:1.5em;color:#a9c8ff;opacity:0;z-index:2050;
+  transition:opacity 2s ease-in-out;
+}
+.memory-line{
+  color:#9fbfff;font-style:italic;text-align:center;
+  font-size:1.2rem;opacity:0;transition:opacity 1.6s ease;
+  margin:1em 0;
+}
+.hint-box {
+  background: rgba(255,200,100,0.1);
+  border: 1px solid rgba(255,200,100,0.3);
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  color: #ffcc88;
+  font-style: italic;
+}
+</style>
+</head>
+
+<body data-scene="perfect_haunt">
+<section id="scene" class="scene-text">
+  <h1>The Perfect Haunt</h1>
+  <p class="fade-line">The air trembles here, walls shifting like lungs around you.</p>
+  <p class="fade-line">Every echo carries your name, whispered by something unseen.</p>
+
+  <div id="shade-dialogue"></div>
+  <div id="player-choices"></div>
+</section>
+
+<div id="memory-alert" aria-hidden="true">✦ Memory of the Haunt recovered.</div>
+<div id="inventory-box"></div>
+<div id="fade-overlay"></div>
+<div id="memory-text"></div>
+
+<script>
+// Mark as visited immediately
+localStorage.setItem('visited_haunt', 'true');
+localStorage.setItem('last_perfect_visit', 'perfect_haunt');
+
+function refreshInventory(){
+  const inv=JSON.parse(localStorage.getItem("inventory")||"[]");
+  document.getElementById("inventory-box").innerHTML=
+    "<strong>Inventory</strong><br>"+(inv.length?inv.map(i=>i.name||i.id).join("<br>"):"(empty)");
+}
+
+function addItemToInventory(item){
+  let inv=JSON.parse(localStorage.getItem("inventory")||"[]");
+  if(!inv.some(i=>i.id===item.id)){
+    inv.push(item);
+    localStorage.setItem("inventory",JSON.stringify(inv));
+    refreshInventory();
+    return true;
+  }
+  return false;
+}
+
+function showMemoryAlert(text){
+  const el=document.getElementById("memory-alert");
+  el.textContent="✦ "+text;
+  el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"),3000);
+}
+
+function pulseLines(lines,delay=2500,done=null){
+  const cont=document.getElementById("shade-dialogue");
+  lines.forEach((t,i)=>{
+    const p=document.createElement("p");
+    p.className="fade-line";
+    p.innerHTML="<em>"+t+"</em>";
+    cont.appendChild(p);
+    setTimeout(()=>p.style.opacity=1,i*delay);
+  });
+  if(done)setTimeout(done,lines.length*delay+600);
+}
+
+function showChoices(opts){
+  const div=document.getElementById("player-choices");
+  div.innerHTML="";
+  opts.forEach(o=>{
+    const a=document.createElement("a");
+    a.href="#";
+    a.className="choice";
+    a.textContent=o.text;
+    a.onclick=e=>{e.preventDefault();o.action();};
+    div.appendChild(a);
+  });
+}
+
+function beginScene(){
+  // Check inventory state
+  const inv=JSON.parse(localStorage.getItem("inventory")||"[]");
+  const hasMark=inv.some(i=>{
+    const name=(typeof i==='string')?i:(i&&i.name?i.name:'');
+    return name.toLowerCase().includes("shade") && name.toLowerCase().includes("mark");
+  });
+  const hasHeart=inv.some(i=>{
+    const name=(typeof i==='string')?i:(i&&i.name?i.name:'');
+    return name.toLowerCase().includes("river") && name.toLowerCase().includes("heart");
+  });
+  
+  // CASE 1: Has Mark, memory not unlocked → trigger memory immediately
+  if(hasMark && localStorage.getItem('memory_haunt')!=='true'){
+    setTimeout(()=>{
+      triggerHauntMemory();
+    }, 2000);
+    return;
+  }
+  
+  // CASE 2: Has Heart but no Mark → show hint
+  if(hasHeart && !hasMark){
+    const hint = document.createElement("div");
+    hint.className = "hint-box fade-line";
+    hint.innerHTML = "The River's Heart pulses warmly against your chest, but the walls remain silent.<br><br>Perhaps you need something that marks you as one who has touched the Shade's reflection...";
+    document.getElementById("shade-dialogue").appendChild(hint);
+    setTimeout(()=>hint.style.opacity=1, 500);
+    
+    setTimeout(()=>{
+      showChoices([
+        {text:"Return to the River Shade", action:()=>window.location.href="perfect_path.html"}
+      ]);
+    }, 3000);
+    return;
+  }
+  
+  // CASE 3: Memory already unlocked → completion message
+  if(localStorage.getItem('memory_haunt')==='true'){
+    const cont=document.getElementById("shade-dialogue");
+    const p=document.createElement("p");
+    p.className="fade-line";
+    p.style.opacity=1;
+    p.innerHTML="<em>The walls settle, satisfied. The house knows you now.</em>";
+    cont.appendChild(p);
+    
+    showChoices([
+      {text:"Return to the River Shade", action:()=>window.location.href="perfect_path.html"}
+    ]);
+    return;
+  }
+  
+  // CASE 4: Normal flow - no items yet, let player explore
+  const lines=[
+    "The house exhales when you step inside.",
+    "The walls hum with something alive—and waiting."
+  ];
+  pulseLines(lines,2500,()=>showChoices([{text:"Listen to the walls",action:listenWalls}]));
+}
+
+function triggerHauntMemory(){
+  const fadeOverlay = document.getElementById('fade-overlay');
+  const memoryText = document.getElementById('memory-text');
+  const alertBox = document.getElementById('memory-alert');
+  
+  fadeOverlay.style.opacity = '1';
+  fadeOverlay.style.pointerEvents = 'auto';
+  
+  setTimeout(() => {
+    memoryText.textContent = "The mark on your arm burns cold, and the walls remember.";
+    memoryText.style.opacity = 1;
+  }, 1500);
+
+  setTimeout(() => {
+    memoryText.textContent = "This house was never empty—it was full of the parts of you that couldn't leave.";
+  }, 4000);
+
+  setTimeout(() => {
+    memoryText.textContent = "The shadows you left behind. The voices that wouldn't stop. The haunt was always yours.";
+  }, 6500);
+
+  setTimeout(() => {
+    alertBox.classList.add('show');
+  }, 9000);
+
+  setTimeout(() => {
+    // SET FLAGS
+    localStorage.setItem('memory_haunt','true');
+    localStorage.setItem('hauntMemoryUnlocked','true');
+    
+    alertBox.classList.remove('show');
+    memoryText.style.opacity = '0';
+    fadeOverlay.style.opacity = '0';
+    fadeOverlay.style.pointerEvents = 'none';
+    
+    const cont=document.getElementById("shade-dialogue");
+    cont.innerHTML = "";
+    const p=document.createElement("p");
+    p.className="fade-line";
+    p.style.opacity=1;
+    p.innerHTML="<em>The walls settle, satisfied. The house knows you now.</em><br><strong>Memory of the Haunt unlocked.</strong>";
+    cont.appendChild(p);
+    
+    setTimeout(()=>{
+      showChoices([{text:"Return to the River Shade",action:()=>window.location.href="perfect_path.html"}]);
+    }, 2000);
+  }, 12000);
+}
+
+function listenWalls(){
+  const cont=document.getElementById("shade-dialogue");
+  const p=document.createElement("p");
+  p.className="fade-line";
+  p.textContent="You hear your own heartbeat echoing from behind the walls.";
+  cont.appendChild(p);
+  setTimeout(()=>p.style.opacity=1,20);
+  
+  showChoices([{text:"Reach toward the sound",action:reachForHeart}]);
+}
+
+function reachForHeart(){
+  const cont=document.getElementById("shade-dialogue");
+  cont.innerHTML="";
+  
+  const lines=[
+    "A hollow glow seeps through the cracks.",
+    "The wall peels open, offering a heart made of riverstone.",
+    "It beats once when you touch it."
+  ];
+  
+  pulseLines(lines,2500,()=>{
+    const gained=addItemToInventory({id:"amulet",name:"Fragment of the River's Heart"});
+    const p=document.createElement("p");
+    p.className="fade-line";
+    p.style.opacity=1;
+    p.innerHTML=gained?
+      "<em>The fragment is warm—alive—and it remembers you.</em>":
+      "<em>The heart still beats, faintly recognizing its owner.</em>";
+    cont.appendChild(p);
+    
+    // Add hint about needing the Shade's Mark
+    setTimeout(()=>{
+      const hint = document.createElement("div");
+      hint.className = "hint-box fade-line";
+      hint.innerHTML = "The heart pulses with potential, but the walls remain silent.<br><br><em>Perhaps you need to return when you bear the mark of the one who dwells in the water...</em>";
+      cont.appendChild(hint);
+      setTimeout(()=>hint.style.opacity=1, 100);
+      
+      setTimeout(()=>{
+        showChoices([{text:"Return to the River Shade",action:()=>window.location.href="perfect_path.html"}]);
+      }, 2000);
+    }, 1500);
+  });
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  refreshInventory();
+  beginScene();
+});
+</script>
+</body>
+</html>

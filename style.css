@@ -1,0 +1,318 @@
+/* === The River Shade — Unified Aesthetic === */
+/* Blends Golden Fog + Adventure Game Glow */
+
+body {
+  margin: 0;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  background: radial-gradient(ellipse at bottom, #1b1b1b 0%, #0d0d0d 100%);
+  background-attachment: fixed;
+  color: #fffaf0;
+  font-family: 'Georgia', serif;
+  line-height: 1.6;
+  animation: fadeIn 1.5s ease-in;
+}
+
+/* === Top Reset Button (Persistent) === */
+.reset-btn-top {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 0.5em 1.2em;
+  background: rgba(255,200,120,0.12);
+  border: 1px solid rgba(255,200,120,0.3);
+  border-radius: 8px;
+  color: #ffe7c0;
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 0.95em;
+  z-index: 10000;
+  transition: all 0.25s ease;
+}
+.reset-btn-top:hover {
+  background: rgba(255,200,120,0.25);
+  box-shadow: 0 0 10px rgba(255,200,120,0.4);
+  transform: scale(1.05);
+}
+
+/* === Header Title === */
+.header-title, h1 {
+  text-align: center;
+  color: #fff0d9;
+  text-shadow: 0 0 30px rgba(255,200,120,.55),
+               0 0 10px rgba(255,180,90,.25);
+  font-weight: 700;
+  margin: .2em 0 .6em 0;
+}
+
+/* === Choices / Links === */
+.choice, a {
+  display: block;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  color: #ffd7a8;
+  text-decoration: none;
+  border: 1px solid rgba(255,200,120,0.25);
+  transition: all 0.3s ease;
+}
+.choice:hover, a:hover {
+  box-shadow: 0 0 12px rgba(255,200,120,0.3);
+  background: rgba(255,255,255,0.08);
+  transform: scale(1.03);
+}
+
+/* === Reset Button (Inline Versions) === */
+.reset-btn {
+  margin-top: 2em;
+  padding: 0.6em 1.4em;
+  background: rgba(255,200,120,0.12);
+  border: 1px solid rgba(255,200,120,0.3);
+  border-radius: 8px;
+  color: #ffe7c0;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.reset-btn:hover {
+  background: rgba(255,200,120,0.25);
+  box-shadow: 0 0 10px rgba(255,200,120,0.4);
+}
+
+/* === Faint Whisper === */
+.faint {
+  opacity: 0;
+  transition: opacity 3s ease;
+  color: #b0d8ff;
+  font-style: italic;
+}
+.faint.visible { opacity: 1; }
+
+/* === Inventory === */
+.inventory {
+  margin-top: 40px;
+  padding: 15px;
+  border: 1px solid rgba(255,200,120,.3);
+  border-radius: 8px;
+  background-color: rgba(255,255,255,0.05);
+  font-size: 16px;
+  color: #ffe7c0;
+}
+.item { color: #ffd7a8; }
+#inv-empty { color: rgba(255,255,255,0.5); font-style: italic; }
+
+/* === Bottom Whisper === */
+#bottomWhisper {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  text-align: center;
+  font-style: italic;
+  color: rgba(255,230,180,.98);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 1s ease, transform 1s ease;
+  pointer-events: none;
+  text-shadow: 0 0 16px rgba(255,200,120,.14);
+  z-index: 9999;
+}
+
+/* === Fog Effects === */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 70%);
+  pointer-events: none;
+  animation: fogDrift 15s ease-in-out infinite alternate;
+  z-index: -1;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(200,230,255,0.05) 2px, transparent 4px),
+    radial-gradient(circle, rgba(180,210,240,0.04) 1.5px, transparent 4px);
+  background-size: 200px 200px, 300px 300px;
+  background-position: 0 0, 100px 100px;
+  opacity: 0.25;
+  animation: fogParticles 60s linear infinite;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* === Animations === */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fogParticles {
+  from { background-position: 0 0, 100px 100px; }
+  to { background-position: 400px 600px, 200px 800px; }
+}
+@keyframes fogDrift {
+  from { opacity: 0.25; transform: translateY(0px); }
+  to { opacity: 0.6; transform: translateY(-10px); }
+}
+
+/* === Responsive === */
+@media (max-width: 600px) {
+  body { padding: 1em; }
+  .choice, .reset-btn-top { width: 90%; font-size: 1em; }
+}
+#bottomWhisper {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  text-align: center;
+  font-style: italic;
+  color: rgba(255,230,180,0.98);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 1.5s ease, transform 1s ease;
+  pointer-events: none;
+  text-shadow: 0 0 16px rgba(255,200,120,0.14);
+  z-index: 9999;
+}
+/* Prevent bottom overlap */
+body {
+  padding-bottom: 80px;
+}
+
+/* Whisper text */
+#bottomWhisper {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 32px;
+  text-align: center;
+  font-style: italic;
+  color: rgba(255,230,180,0.98);
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  pointer-events: none;
+  text-shadow: 0 0 12px rgba(255,200,120,0.2);
+  z-index: 9999;
+}
+
+/* Fade overlay */
+.shade-fade {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 90%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2s ease;
+  z-index: 100;
+}
+.shade-fade.active { opacity: 1; }
+/* ==========================================================
+   === RIVER SHADE TEXT & LAYOUT STABILITY PATCH v1.0 ===
+   ========================================================== */
+
+/* Prevent overlapping scene text and fade layers */
+body, main, .scene-text, .fade-in {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ensure paragraphs never collide and wrap cleanly */
+.scene-text p {
+  margin: 0 0 1em 0;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+/* Smooth fade for scene transitions */
+.fade-in {
+  animation: fadeInScene 2s ease forwards;
+  opacity: 0;
+}
+@keyframes fadeInScene {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Force each text block to take its own layer */
+.scene-text:not(:last-child) {
+  display: block;
+}
+
+/* Keep dev panel, hints, whispers above content but not overlapping */
+#dev-panel, #dev_overlay {
+  z-index: 10000;
+}
+
+/* Footer / hint positioning fix */
+footer.hint {
+  position: relative;
+  margin-top: 2em;
+  display: block;
+}
+
+/* Add small spacing under main to prevent footer collision */
+main {
+  margin-bottom: 2em;
+}
+
+/* Ensure links and fade elements clear floats correctly */
+.choice, a, .reset-btn {
+  clear: both;
+}
+
+/* Optional scroll reset helper (if JS scrollTop reset fails) */
+html, body {
+  scroll-behavior: smooth;
+}
+
+/* === RIVER SHADE SCROLL & OVERLAY FIX v2 === */
+
+/* Allow scrolling for long scenes */
+html, body {
+  overflow-y: auto;
+  height: auto;
+  min-height: 100vh;
+}
+
+/* Keep overlay covering the full page even with scroll */
+.shade-fade {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  height: 100%;
+  width: 100%;
+  background: radial-gradient(circle at center,
+              rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 90%);
+  pointer-events: none;
+  transition: opacity 1.5s ease;
+  z-index: 1000;
+}
+
+/* Smooth fade-in text animation (no jump on scroll) */
+.fade-in {
+  opacity: 0;
+  animation: fadeInScene 1.6s ease forwards;
+}
+@keyframes fadeInScene {
+  from { opacity: 0; transform: translateY(0.4rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Main container spacing to prevent footer overlap */
+main, .container {
+  position: relative;
+  z-index: 1;
+  padding-bottom: 4rem;
+}
+
+/* Footer hint stays visible but doesn’t overlap content */
+footer.hint {
+  position: relative;
+  margin-top: 3rem;
+  display: block;
+}

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade – Cellar</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: #000;
+  color: #ccc;
+  font-family: 'Georgia', serif;
+  padding: 2em;
+  text-align: center;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+  margin-bottom: 2rem;
+}
+.container {
+  max-width: 760px;
+  margin: 0 auto;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.choice {
+  display: block;
+  color: #9cf;
+  text-decoration: none;
+  margin: 1em auto;
+  padding: 0.6em 1.2em;
+  border: 1px solid #9cf;
+  border-radius: 8px;
+  max-width: 300px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.choice:hover {
+  background: rgba(156,207,255,0.1);
+}
+#inventory-box {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #888;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  color: #eee;
+  border-radius: 8px;
+  max-width: 250px;
+  z-index: 1000;
+}
+.reset-btn-top {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.6);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.reset-btn-top:hover {
+  background: rgba(120,0,0,0.8);
+  border-color: #900;
+}
+.fade-line { 
+  opacity: 0; 
+  transition: opacity 2s ease; 
+  color: #ddd;
+  margin: 1.2em 0;
+}
+.pickup-fade {
+  position: fixed;
+  inset: 0;
+  background: black;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+.pickup-fade.active {
+  opacity: 1;
+}
+.hidden-message {
+  color: #aaf;
+  text-decoration: none;
+  display: block;
+  margin-top: 1.5em;
+  cursor: pointer;
+  padding: 0.8em 1.2em;
+  border: 1px solid #aaf;
+  border-radius: 8px;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+  background: rgba(170,170,255,0.05);
+  transition: all 0.3s;
+  box-shadow: 0 0 15px rgba(170,170,255,0.2);
+  animation: whisperPulse 3s infinite;
+}
+.hidden-message:hover {
+  background: rgba(170,170,255,0.15);
+  box-shadow: 0 0 25px rgba(170,170,255,0.4);
+}
+@keyframes whisperPulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(170,170,255,0.2); }
+  50% { box-shadow: 0 0 25px rgba(170,170,255,0.35); }
+}
+</style>
+</head>
+
+<body data-scene="cellar">
+
+<button class="reset-btn-top" id="resetBtn">⟳ Reset Player</button>
+
+<section class="scene-text" id="sceneText">
+  <p>The cellar lies beneath the tavern, damp and cold, as though it remembers every whispered sin that passed above. The air tastes of iron and dust.</p>
+  <p>Your lantern flickers. Shadows press close to the walls, heavy and silent. Something old waits here.</p>
+</section>
+
+<div class="container">
+  <h1>The Cellar</h1>
+
+  <div id="content">
+    <a href="#" class="choice" id="searchCellar">🔍 Search the room</a>
+    <a href="tavern.html" class="choice">⬆️ Return to the Tavern</a>
+  </div>
+</div>
+
+<div id="inventory-box"></div>
+
+<script>
+// === Reset Player ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset your journey?")) {
+    localStorage.clear();
+    location.href = "index.html";
+  }
+});
+
+// === Inventory helper ===
+function refreshInventoryBoxSafe(){
+  const box = document.getElementById("inventory-box");
+  if (!box) return;
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      if (item && item.id) return item.id;
+      return String(item);
+    });
+    box.innerHTML = "<strong>Inventory</strong><br>" + 
+      (displayItems.length ? displayItems.join("<br>") : "(empty)");
+  } catch(e) {
+    box.innerHTML = "<strong>Inventory</strong><br>(empty)";
+  }
+}
+refreshInventoryBoxSafe();
+
+// === Item check helper ===
+function hasItem(itemName) {
+  try {
+    const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+    return inv.some(item => {
+      const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+      return val.toLowerCase().includes(itemName.toLowerCase());
+    });
+  } catch(e) {
+    return false;
+  }
+}
+
+// === Search interaction ===
+document.getElementById("searchCellar").addEventListener("click", (e) => {
+  e.preventDefault();
+  
+  const scene = document.getElementById("sceneText");
+  const content = document.getElementById("content");
+  const hasKey = hasItem("key") || hasItem("rust");
+  const hasHeart = hasItem("heart") || hasItem("river");
+  
+  // Already searched flag
+  const searched = localStorage.getItem("cellarSearched") === "true";
+  
+  if (searched && !hasKey) {
+    scene.innerHTML = "<p>You've already searched the cellar thoroughly. The keyhole still waits, sealed and patient.</p>";
+    return;
+  }
+  
+  if (searched && hasKey && hasHeart) {
+    // Already have heart, show whisper option if conditions met
+    showWhisperOption();
+    return;
+  }
+  
+  // Mark as searched
+  localStorage.setItem("cellarSearched", "true");
+  
+  scene.innerHTML = "<p>You run your hand along the stone wall. The mortar is rough, crumbling under your touch.</p>";
+
+  // === If player has the Rusty Key ===
+  if (hasKey) {
+    const lines = [
+      "Your fingers brush against a faint groove in the wall – a keyhole, half hidden by age.",
+      "The Rusty Key turns slowly. Stone grinds against stone.",
+      "A section of the wall shifts open, revealing a small alcove. Inside rests an amulet, dark as ink and pulsing faintly with light.",
+      "<em>The River's Heart.</em>"
+    ];
+    
+    lines.forEach((text, i) => {
+      setTimeout(() => {
+        const p = document.createElement("p");
+        p.className = "fade-line";
+        p.innerHTML = text;
+        scene.appendChild(p);
+        setTimeout(() => p.style.opacity = 1, 100);
+      }, i * 2500);
+    });
+    
+    setTimeout(() => {
+      const link = document.createElement("a");
+      link.href = "#";
+      link.className = "choice";
+      link.textContent = "🜂 Take the River's Heart";
+      
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        
+        // Pickup effect
+        const fade = document.createElement("div");
+        fade.className = "pickup-fade";
+        document.body.appendChild(fade);
+        setTimeout(() => fade.classList.add("active"), 75);
+        
+        setTimeout(() => {
+          // Add to inventory if not already there
+          const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+          if (!inv.some(item => {
+            const val = (typeof item === 'string') ? item : (item.name || item.id || '');
+            return val.toLowerCase().includes("heart");
+          })) {
+            inv.push({id: "rivers_heart", name: "The River's Heart"});
+            localStorage.setItem("inventory", JSON.stringify(inv));
+            
+            // Track achievement
+            if (window.trackItemCollected) {
+              window.trackItemCollected('rivers_heart');
+              
+              // Check if player has all 5 items for collector achievement
+              const allItems = ['journal', 'rusty_key', 'rivers_heart', 'shades_mark', 'silver_coin'];
+              const currentInv = JSON.parse(localStorage.getItem("inventory") || "[]");
+              const hasAll = allItems.every(itemId => {
+                return currentInv.some(item => {
+                  const val = (typeof item === 'string') ? item : (item.id || '');
+                  return val.toLowerCase().includes(itemId.split('_')[0]);
+                });
+              });
+              
+              if (hasAll && window.unlockAchievement) {
+                window.unlockAchievement('collector');
+              }
+            }
+          }
+          
+          refreshInventoryBoxSafe();
+          fade.classList.remove("active");
+          setTimeout(() => fade.remove(), 1000);
+          link.remove();
+
+          // Subtle hint
+          const hint = document.createElement("p");
+          hint.className = "fade-line";
+          hint.innerHTML = "<em>The cellar hums faintly as you hold the amulet. Something beneath the stone begins to listen...</em>";
+          scene.appendChild(hint);
+          setTimeout(() => hint.style.opacity = 1, 100);
+          
+          // Show whisper option after a delay
+          setTimeout(() => {
+            showWhisperOption();
+          }, 3000);
+          
+        }, 700);
+      });
+      
+      content.insertBefore(link, content.firstChild);
+    }, lines.length * 2500);
+  } 
+  else {
+    // No key = locked
+    setTimeout(() => {
+      const p = document.createElement("p");
+      p.className = "fade-line";
+      p.innerHTML = "<em>The stones here are smooth, sealed. A keyhole gleams faintly in the dark – but you have nothing that fits.</em>";
+      scene.appendChild(p);
+      setTimeout(() => p.style.opacity = 1, 100);
+    }, 1000);
+  }
+});
+
+// === Show Whisper Option (Hidden Path to Alt Ending) ===
+function showWhisperOption() {
+  const scene = document.getElementById("sceneText");
+  const content = document.getElementById("content");
+  
+  // Check if already shown
+  if (document.getElementById("whisperLink")) return;
+  
+  // === STRICT REQUIREMENTS ===
+  // 1. Must have River's Heart
+  if (!hasItem("heart") && !hasItem("river")) return;
+  
+  // 2. Must have visited bridge and seen lore reveal
+  const bridgeInvestigated = localStorage.getItem("bridgeInvestigated") === "true";
+  if (!bridgeInvestigated) {
+    console.log("Whisper blocked: Bridge not investigated yet");
+    return;
+  }
+  
+  // 3. Must have at least 4 items (near completion)
+  const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
+  if (inv.length < 4) {
+    console.log("Whisper blocked: Only", inv.length, "items collected");
+    return;
+  }
+  
+  console.log("All requirements met - showing whisper option");
+  
+  // Add whisper text
+  const whisperText = document.createElement("p");
+  whisperText.className = "fade-line";
+  whisperText.innerHTML = "<em>The walls whisper when the River's Heart hums… something stirs beneath the stone.</em>";
+  whisperText.style.color = "#aab";
+  whisperText.style.fontStyle = "italic";
+  whisperText.style.marginTop = "2rem";
+  scene.appendChild(whisperText);
+  setTimeout(() => whisperText.style.opacity = 1, 100);
+
+  // Add hidden message link
+  const hidden = document.createElement("a");
+  hidden.href = "#";
+  hidden.id = "whisperLink";
+  hidden.textContent = "✨ Listen to the Whisper";
+  hidden.className = "hidden-message";
+  
+  hidden.addEventListener("click", (e) => {
+    e.preventDefault();
+    localStorage.setItem("memoryUnlocked", "true");
+    
+    // Fade transition
+    const fade = document.createElement("div");
+    fade.className = "pickup-fade";
+    document.body.appendChild(fade);
+    setTimeout(() => fade.classList.add("active"), 100);
+    
+    setTimeout(() => {
+      window.location.href = "true_alt_ending.html";
+    }, 1500);
+  });
+  
+  content.appendChild(hidden);
+}
+
+// === Check if player already has River's Heart on page load ===
+document.addEventListener("DOMContentLoaded", () => {
+  const hasKey = hasItem("key") || hasItem("rust");
+  const hasHeart = hasItem("heart") || hasItem("river");
+  const searched = localStorage.getItem("cellarSearched") === "true";
+  const bridgeInvestigated = localStorage.getItem("bridgeInvestigated") === "true";
+  
+  // If player has heart and already searched, check if whisper should show
+  if (hasHeart && searched && bridgeInvestigated) {
+    const scene = document.getElementById("sceneText");
+    scene.innerHTML += `
+      <p style="margin-top: 2rem;"><em>The River's Heart pulses in your possession. The cellar walls seem to respond to its rhythm...</em></p>
+    `;
+    
+    // Check whisper requirements
+    setTimeout(() => {
+      showWhisperOption();
+    }, 1000);
+  }
+});
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+<script src="item-examination.js"></script>
+</body>
+</html>

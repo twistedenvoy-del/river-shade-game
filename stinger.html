@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Echo Beneath the Water</title>
+<link href="style.css" rel="stylesheet"/>
+    <link href="mobile.css" rel="stylesheet"/>
+<style>
+body {
+  background: radial-gradient(circle, #000814 0%, #000 100%);
+  color: #d0eaff;
+  text-align: center;
+  padding: 3em;
+  opacity: 0;
+  transition: opacity 6s ease;
+  font-family: 'Georgia', serif;
+}
+.scene-text {
+  max-width: 760px;
+  margin: 0 auto 3rem auto;
+  line-height: 1.8;
+  font-size: 1.1rem;
+  color: #b0c8e0;
+}
+h1 {
+  font-size: 2.2rem;
+  margin: 2rem 0;
+  color: #d0eaff;
+  text-shadow: 0 0 20px rgba(176, 200, 224, 0.3);
+}
+.stinger-line {
+  opacity: 0;
+  transition: opacity 3s ease;
+  margin: 1.5rem auto;
+  font-size: 1.15rem;
+  max-width: 700px;
+  line-height: 1.7;
+}
+footer {
+  position: fixed;
+  bottom: 2rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #778899;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+.skip-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(80,0,0,0.4);
+  border: 1px solid #600;
+  color: #faa;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  z-index: 1000;
+  transition: all 0.3s;
+  opacity: 0;
+  animation: fadeIn 2s ease 2s forwards;
+}
+.skip-btn:hover {
+  background: rgba(120,0,0,0.6);
+  border-color: #900;
+}
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+</style>
+</head>
+
+<body data-scene="stinger">
+
+<button class="skip-btn" id="skipBtn">Skip ▶</button>
+
+<section class="scene-text">
+  <p>The ending is less a moment than a soft unthreading. Memories you've leaned on for steadiness thin like gauze; behind them something waits, amused. You cannot tell if you are about to wake or dissolve. Even relief tastes like a question.</p>
+</section>
+
+<h1 id="title">The River Is Quiet Now</h1>
+<p class="stinger-line" id="line1"></p>
+<p class="stinger-line" id="line2"></p>
+
+<footer>"The fog remembers even silence."</footer>
+
+<script>
+// === Fade in the page ===
+window.addEventListener('load', () => {
+  document.body.style.opacity = 1;
+  
+  // === Check ending flags ===
+  const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
+  const perfectComplete = localStorage.getItem('perfectPathComplete') === 'true';
+  const trueAltComplete = flags.trueAltComplete || flags.remembered;
+  const deathCount = parseInt(flags.deathCount || '0', 10);
+  
+  const l1 = document.getElementById('line1');
+  const l2 = document.getElementById('line2');
+  const title = document.getElementById('title');
+  
+  let lines;
+  let endingType = 'default';
+  
+  // === PERFECT ENDING (Best ending - completed perfect path) ===
+  if (perfectComplete) {
+    title.textContent = "The River Breathes With You";
+    lines = [
+      "The water no longer whispers your name—it hums it, gentle as a lullaby.",
+      "Above, the fog parts. For the first time, you see stars reflected in the current."
+    ];
+    endingType = 'perfect';
+  }
+  // === TRUE ALT ENDING (Found all items, unlocked perfect path) ===
+  else if (trueAltComplete) {
+    title.textContent = "The River Remembers";
+    lines = [
+      "The current stills, carrying your reflection downstream like a promise kept.",
+      "Something beneath the surface shifts—not threatening, but waiting."
+    ];
+    endingType = 'true';
+  }
+  // === DIED MULTIPLE TIMES (3+ deaths) ===
+  else if (deathCount >= 3) {
+    title.textContent = "The River Knows Your Face";
+    lines = [
+      "The water settles, but it never forgets. Each ripple carries a memory of drowning.",
+      "Your reflection lingers longer than it should, as if reluctant to let you leave."
+    ];
+    endingType = 'default';
+  }
+  // === DIED ONCE OR TWICE ===
+  else if (deathCount > 0) {
+    title.textContent = "The River Is Still";
+    lines = [
+      "The fog whispers once, soft as breath: <em>'It will find you again.'</em>",
+      "You walk away, but the sound of water follows just behind your footsteps."
+    ];
+    endingType = 'default';
+  }
+  // === DEFAULT (Completed without much exploration) ===
+  else {
+    title.textContent = "The River Is Quiet Now";
+    lines = [
+      "The water settles. The echo fades. Something unseen still listens.",
+      "In the silence, your name sounds different—like someone else said it first."
+    ];
+    endingType = 'default';
+  }
+  
+  // Track ending achievement
+  if (window.trackEnding && endingType !== 'default') {
+    window.trackEnding(endingType);
+  }
+  
+  // === Display lines with fade-in ===
+  l1.innerHTML = lines[0];
+  l2.innerHTML = lines[1];
+  
+  setTimeout(() => l1.style.opacity = 1, 3000);
+  setTimeout(() => l2.style.opacity = 1, 7000);
+  
+  // === Auto-redirect after 15 seconds ===
+  const redirectTimer = setTimeout(() => {
+    // PRESERVE achievements before clearing
+    const stats = JSON.parse(localStorage.getItem('playerStats') || '{}');
+    const achievements = stats.achievements || [];
+    
+    try {
+      localStorage.clear();
+      
+      // Restore achievements after clearing
+      if (achievements.length > 0) {
+        const newStats = {
+          initialized: true,
+          totalDeaths: 0,
+          uniqueDeaths: [],
+          endingsReached: [],
+          itemsCollected: [],
+          itemsExamined: [],
+          locationsVisited: [],
+          playTime: 0,
+          startTime: Date.now(),
+          achievements: achievements
+        };
+        localStorage.setItem('playerStats', JSON.stringify(newStats));
+        console.log("Achievements preserved:", achievements.length);
+      }
+      
+      console.log("Stinger complete - cleared all data except achievements, returning to index");
+    } catch(e) {
+      console.warn("Could not clear storage:", e);
+    }
+    window.location.href = 'index.html';
+  }, 15000);
+  
+  // === Skip button ===
+  document.getElementById('skipBtn').addEventListener('click', () => {
+    clearTimeout(redirectTimer);
+    
+    // PRESERVE achievements before clearing
+    const stats = JSON.parse(localStorage.getItem('playerStats') || '{}');
+    const achievements = stats.achievements || [];
+    
+    try {
+      localStorage.clear();
+      
+      // Restore achievements after clearing
+      if (achievements.length > 0) {
+        const newStats = {
+          initialized: true,
+          totalDeaths: 0,
+          uniqueDeaths: [],
+          endingsReached: [],
+          itemsCollected: [],
+          itemsExamined: [],
+          locationsVisited: [],
+          playTime: 0,
+          startTime: Date.now(),
+          achievements: achievements
+        };
+        localStorage.setItem('playerStats', JSON.stringify(newStats));
+        console.log("Achievements preserved on skip:", achievements.length);
+      }
+    } catch(e) {
+      console.warn("Could not clear storage:", e);
+    }
+    
+    // Fade out
+    document.body.style.opacity = 0;
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1000);
+  });
+});
+</script>
+
+<script src="layout_cleanup.js"></script>
+<script src="achievements.js"></script>
+</body>
+</html>
