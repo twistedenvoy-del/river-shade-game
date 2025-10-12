@@ -380,5 +380,71 @@ document.getElementById('reachOut').addEventListener('click', e => {
 <script src="layout_cleanup.js"></script>
 <script src="achievements.js"></script>
 <script src="item-examination.js"></script>
+/* =========================================================
+   RESET BUTTON FIX - Add to every HTML page
+   Place this BEFORE the closing </body> tag
+   ========================================================= */
+
+<script>
+// === Universal Reset Player Button ===
+document.addEventListener("DOMContentLoaded", () => {
+  const resetBtn = document.getElementById("resetBtn");
+  if (!resetBtn) return;
+  
+  // Remove any existing event listeners by cloning
+  const newResetBtn = resetBtn.cloneNode(true);
+  resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+  
+  // Add fresh click handler
+  newResetBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("Reset button clicked");
+    
+    // Confirm with user
+    const confirmed = confirm("Reset your entire journey? This will erase all progress, inventory, memories, and achievements.");
+    
+    if (!confirmed) {
+      console.log("Reset cancelled by user");
+      return;
+    }
+    
+    console.log("User confirmed reset");
+    
+    // Show fade overlay
+    let overlay = document.getElementById("overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.className = "shade-fade";
+      overlay.id = "overlay";
+      document.body.appendChild(overlay);
+    }
+    overlay.classList.add("active");
+    
+    // Clear everything after a brief delay
+    setTimeout(() => {
+      try {
+        // Clear all localStorage
+        localStorage.clear();
+        console.log("localStorage cleared");
+        
+        // Clear sessionStorage too
+        sessionStorage.clear();
+        console.log("sessionStorage cleared");
+        
+        // Redirect to index with cache-busting parameter
+        const timestamp = Date.now();
+        window.location.href = `index.html?reset=${timestamp}`;
+      } catch (err) {
+        console.error("Reset error:", err);
+        alert("Error resetting game. Please try refreshing the page manually.");
+      }
+    }, 1000);
+  });
+  
+  console.log("Reset button initialized");
+});
+</script>
 </body>
 </html>
