@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The River Shade – Tavern</title>
 <link href="style.css" rel="stylesheet"/>
-    <link href="mobile.css" rel="stylesheet"/>
+<link href="mobile.css" rel="stylesheet"/>
 <style>
 body {
   background: #000;
@@ -102,6 +102,37 @@ h1 {
   margin: 1.5rem 0;
   opacity: 0;
   transition: opacity 2s ease;
+  padding: 1rem;
+  background: rgba(156,207,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(156,207,255,0.15);
+}
+
+/* MOBILE WHISPER FIX */
+@media (max-width: 768px) {
+  #listenToWhispers {
+    display: block !important;
+    min-height: 60px !important;
+    padding: 1.5rem !important;
+    margin: 2rem auto !important;
+    font-size: 1.1rem !important;
+    width: 85% !important;
+    max-width: 400px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: rgba(156,207,255,0.3) !important;
+    cursor: pointer !important;
+    line-height: 1.4 !important;
+  }
+  
+  .whisper-atmosphere {
+    padding: 1rem !important;
+    margin: 1.5rem 0.5rem !important;
+    font-size: 1rem !important;
+  }
+  
+  #whisperAtmosphere {
+    margin: 2rem 0 !important;
+  }
 }
 </style>
 </head>
@@ -130,11 +161,30 @@ h1 {
 
 <script>
 // === Reset Player ===
-document.getElementById("resetBtn").addEventListener("click", () => {
-  if (confirm("Reset your journey?")) {
-    localStorage.clear();
-    location.href = "index.html";
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  const resetBtn = document.getElementById("resetBtn");
+  if (!resetBtn) return;
+  
+  const newResetBtn = resetBtn.cloneNode(true);
+  resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+  
+  newResetBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!confirm("Reset your entire journey?")) return;
+    
+    const fade = document.createElement("div");
+    fade.className = "pickup-fade";
+    fade.style.opacity = "1";
+    document.body.appendChild(fade);
+    
+    setTimeout(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = `index.html?reset=${Date.now()}`;
+    }, 1000);
+  });
 });
 
 // === Inventory helper ===
@@ -162,13 +212,11 @@ window.addEventListener("DOMContentLoaded", () => {
     const scene = document.getElementById("sceneText");
     const inv = JSON.parse(localStorage.getItem("inventory") || "[]");
     
-    // Check for coin
     const hasCoin = inv.some(i => {
       const val = (typeof i === 'string') ? i : (i.name || i.id || '');
       return val.toLowerCase().includes("coin") || val.toLowerCase().includes("silver");
     });
     
-    // Check for journal
     const hasJournal = inv.some(i => {
       const val = (typeof i === 'string') ? i : (i.name || i.id || '');
       return val.toLowerCase().includes("journal");
@@ -211,7 +259,6 @@ window.addEventListener("DOMContentLoaded", () => {
             inv.push({id: "silver_coin", name: "Silver Coin"});
             localStorage.setItem("inventory", JSON.stringify(inv));
             
-            // Track achievement
             if (window.trackItemCollected) {
               window.trackItemCollected('silver_coin');
             }
@@ -227,10 +274,9 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // === UPDATED: Whisper Death Option ===
+    // === WHISPER DEATH OPTION - ENHANCED FOR MOBILE ===
     const hasAnyItems = inv.length > 0;
     if (tavernVisited || hasAnyItems) {
-      // Add atmospheric setup first
       const whisperAtmosphere = document.getElementById('whisperAtmosphere');
       whisperAtmosphere.style.display = 'block';
       whisperAtmosphere.innerHTML = `
@@ -240,29 +286,45 @@ window.addEventListener("DOMContentLoaded", () => {
         </p>
       `;
       
-      // Fade in the atmosphere text
       setTimeout(() => {
         const atmosphereText = whisperAtmosphere.querySelector('.whisper-atmosphere');
         if (atmosphereText) atmosphereText.style.opacity = 1;
       }, 500);
       
-      // Add the choice after atmosphere
       setTimeout(() => {
         const content = document.getElementById("content");
         
         const whisperChoice = document.createElement("a");
         whisperChoice.href = "#";
         whisperChoice.id = "listenToWhispers";
-        whisperChoice.className = "choice"; // Standard blue, not red
+        whisperChoice.className = "choice";
+        whisperChoice.style.display = "block";
+        whisperChoice.style.minHeight = "60px";
+        whisperChoice.style.padding = "1.5rem";
+        whisperChoice.style.touchAction = "manipulation";
+        whisperChoice.style.cursor = "pointer";
         whisperChoice.textContent = "👂 Listen carefully to the whispers";
         
-        // Insert at the beginning of content
         content.insertBefore(whisperChoice, content.firstChild);
         
-        whisperChoice.addEventListener("click", (e) => {
+        console.log("Whisper choice added");
+        
+        // Remove any existing listeners
+        const newWhisperChoice = whisperChoice.cloneNode(true);
+        whisperChoice.parentNode.replaceChild(newWhisperChoice, whisperChoice);
+        
+        // Add both click and touch handlers
+        const handleWhisperActivate = (e) => {
           e.preventDefault();
+          e.stopPropagation();
+          console.log("Whisper activated");
           triggerWhisperDeath();
-        });
+        };
+        
+        newWhisperChoice.addEventListener("click", handleWhisperActivate);
+        newWhisperChoice.addEventListener("touchstart", handleWhisperActivate, {passive: false});
+        
+        console.log("Whisper listeners attached");
       }, 1500);
     }
 
@@ -273,15 +335,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
       let text = "";
 
-      // Default whisper (has items but no deep lore yet)
       if (!shadeAware && !perfectHint) {
         text = "<em>\"You brought it back... it still remembers you.\"</em>";
       }
-      // Shade-aware variant (saw reflection dialogue at bridge)
       else if (shadeAware && !perfectHint) {
         text = "<em>\"It followed you from the river... can you hear it breathing through the floorboards?\"</em>";
       }
-      // Perfect-hint variant (bridge told you about cellar)
       else if (shadeAware && perfectHint) {
         text = `
           <em>"It isn't whispering anymore."</em><br>
@@ -307,6 +366,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // === Whisper Death Sequence ===
 function triggerWhisperDeath() {
+  console.log("Starting whisper death sequence");
   const scene = document.getElementById('sceneText');
   scene.innerHTML = '';
   
@@ -333,7 +393,6 @@ function triggerWhisperDeath() {
   });
   
   setTimeout(() => {
-    // Track unique death
     if (window.trackDeath) {
       window.trackDeath('tavern_whispers');
     }
