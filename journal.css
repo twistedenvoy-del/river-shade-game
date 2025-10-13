@@ -1,0 +1,245 @@
+/* ======================================================
+   JOURNAL COVER — Interactive Opening Animation
+   ====================================================== */
+
+.journal-cover {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 30% 40%, #2a1f1a 0%, #0e0a07 80%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+  animation: shimmer 6s linear infinite;
+}
+
+.cover-content {
+  text-align: center;
+  color: #fce8c8;
+  text-shadow: 0 0 12px rgba(255, 220, 150, 0.3);
+}
+
+.cover-content h1 {
+  font-size: 3rem;
+  margin: 0;
+  font-family: 'Georgia', serif;
+  letter-spacing: 2px;
+}
+
+.cover-content p {
+  font-style: italic;
+  margin: 0.5em 0 2em 0;
+  color: #e8d4a0;
+}
+
+#openBtn {
+  background: rgba(255, 230, 180, 0.1);
+  border: 1px solid rgba(255, 220, 160, 0.4);
+  color: #ffe7c0;
+  padding: 0.8em 1.6em;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+#openBtn:hover {
+  background: rgba(255, 220, 160, 0.2);
+  box-shadow: 0 0 15px rgba(255, 210, 140, 0.4);
+  transform: scale(1.05);
+}
+
+/* === Fade transitions === */
+.hidden { display: none; opacity: 0; }
+.fade-in { animation: fadeJournal 1.5s ease forwards; }
+.fade-out { animation: fadeOutCover 1.5s ease forwards; }
+
+@keyframes fadeJournal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOutCover {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* === Light shimmer animation over the leather === */
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+  background-size: 200% 200%;
+}
+
+/* Make sure it looks great on phones */
+@media (max-width: 600px) {
+  .cover-content h1 { font-size: 2rem; }
+  #openBtn { font-size: 1rem; padding: 0.6em 1.2em; }
+}
+/* ============================================================
+   THE RIVER SHADE — THE WANDERER'S NOTES (ILLUMINATED EDITION)
+   Adds parchment texture, glowing ink, and immersive atmosphere
+   ============================================================ */
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0e0b08;
+  background-image: radial-gradient(circle at top, rgba(255, 230, 200, 0.05) 0%, transparent 80%);
+  font-family: 'Georgia', serif;
+  color: #f5e6cc;
+  line-height: 1.6;
+  text-align: left;
+  overflow-y: auto;
+}
+
+/* === PARCHMENT CONTAINER === */
+.journal {
+  max-width: 720px;
+  margin: 3rem auto;
+  background: rgba(36, 27, 20, 0.88);
+  border: 1px solid rgba(255, 230, 180, 0.2);
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow:
+    0 0 30px rgba(255, 220, 150, 0.08),
+    inset 0 0 80px rgba(255, 220, 150, 0.03);
+  backdrop-filter: blur(2px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle parchment overlay texture */
+.journal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    url('https://www.transparenttextures.com/patterns/aged-paper.png'),
+    linear-gradient(to bottom right, rgba(60,50,40,0.3), rgba(20,15,10,0.4));
+  opacity: 0.25;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  z-index: 0;
+}
+
+/* === HEADER === */
+h1 {
+  text-align: center;
+  font-size: 2.6rem;
+  color: #ffe9b0;
+  text-shadow:
+    0 0 8px rgba(255, 230, 180, 0.4),
+    0 0 20px rgba(255, 210, 140, 0.1);
+  margin-bottom: 0.5em;
+  position: relative;
+  z-index: 1;
+}
+
+h2 {
+  color: #ffd48a;
+  margin-top: 1.8em;
+  text-shadow: 0 0 6px rgba(255, 220, 150, 0.2);
+  position: relative;
+  z-index: 1;
+}
+
+/* === INTRO & NOTES === */
+.intro, .note {
+  font-style: italic;
+  color: #e8dac2;
+  position: relative;
+  z-index: 1;
+}
+
+/* === DETAILS ENTRIES === */
+details {
+  margin-top: 0.8em;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid rgba(255, 210, 150, 0.35);
+  border-radius: 6px;
+  padding: 0.8em 1em;
+  transition: background 0.3s ease, transform 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+details:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(2px);
+}
+
+summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: #ffeac8;
+  text-shadow: 0 0 6px rgba(255, 220, 150, 0.25);
+  outline: none;
+}
+
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+ul li span {
+  color: #ffcc88;
+  margin-right: 0.4em;
+  text-shadow: 0 0 6px rgba(255, 220, 150, 0.3);
+}
+
+/* === BACK BUTTON === */
+.back {
+  display: inline-block;
+  margin-top: 2em;
+  color: #ffe7b8;
+  text-decoration: none;
+  border: 1px solid rgba(255, 220, 150, 0.3);
+  padding: 0.6em 1.2em;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+.back:hover {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 0 12px rgba(255, 220, 150, 0.2),
+    inset 0 0 6px rgba(255, 220, 150, 0.1);
+  transform: scale(1.03);
+}
+
+/* === HANDWRITTEN EFFECT === */
+@import url('https://fonts.googleapis.com/css2?family=Zeyada&display=swap');
+
+.journal {
+  font-family: 'Zeyada', 'Georgia', serif;
+  font-size: 1.05rem;
+}
+
+/* === SOFT GLOW INK ANIMATION === */
+@keyframes inkGlow {
+  0%, 100% { text-shadow: 0 0 4px rgba(255, 210, 160, 0.3); }
+  50% { text-shadow: 0 0 10px rgba(255, 230, 180, 0.6); }
+}
+
+h1, h2, summary {
+  animation: inkGlow 6s ease-in-out infinite;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .journal {
+    padding: 1.5rem;
+    font-size: 1rem;
+  }
+  h1 {
+    font-size: 2rem;
+  }
+  h2 {
+    font-size: 1.3rem;
+  }
+  .back {
+    width: 100%;
+    text-align: center;
+  }
+}
