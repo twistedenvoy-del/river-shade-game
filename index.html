@@ -167,6 +167,85 @@
   box-shadow: 0 0 15px rgba(156,207,255,0.4);
 }
 
+/* === Journal Button === */
+.journal-btn-top {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(139,90,43,0.6);
+  border: 1px solid rgba(210,180,140,0.4);
+  color: #d2b48c;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  z-index: 1000;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bookGlow 2s infinite;
+}
+
+.journal-btn-top:hover {
+  background: rgba(160,100,50,0.8);
+  border-color: #d2b48c;
+  box-shadow: 0 0 15px rgba(210,180,140,0.5);
+}
+
+@keyframes bookGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(210,180,140,0.3); }
+  50% { box-shadow: 0 0 20px rgba(210,180,140,0.5); }
+}
+
+/* === Journal Unlock Notification === */
+.journal-unlock-notification {
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  background: linear-gradient(135deg, #2a1810 0%, #1a0f08 100%);
+  border: 2px solid rgba(210,180,140,0.5);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+  z-index: 10001;
+  opacity: 0;
+  transform: translateX(-400px);
+  transition: all 0.5s ease;
+}
+
+.journal-unlock-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.journal-unlock-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 0 10px rgba(210,180,140,0.5));
+}
+
+.journal-unlock-text {
+  color: #d2b48c;
+}
+
+.journal-unlock-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #c9a66b;
+  margin-bottom: 0.25rem;
+}
+
+.journal-unlock-desc {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #d2b48c;
+}
+
 /* === Fade Overlay === */
 .shade-fade {
   position: fixed;
@@ -219,6 +298,9 @@ footer {
   
   <!-- Stats Button -->
   <a href="stats.html" class="stats-btn-top" title="View Statistics">📊</a>
+  
+  <!-- Journal Button (unlocked after certain conditions) -->
+  <a href="journal.html" class="journal-btn-top" id="journalBtn" style="display:none;" title="The Keeper's Journal">📖</a>
 
   <!-- Main content -->
   <main class="scene-text fade-in container" style="display:none;">
@@ -246,8 +328,8 @@ footer {
   <div id="inventory-box"></div>
 
   <script src="layout_cleanup.js"></script>
-<script src="achievements.js"></script>
-<script src="item-examination.js"></script>
+  <script src="achievements.js"></script>
+  <script src="item-examination.js"></script>
 
   <!-- ==================== RESET PLAYER ==================== -->
   <script>
@@ -272,6 +354,41 @@ footer {
       }, 1000);
     });
   });
+  </script>
+
+  <!-- ==================== JOURNAL UNLOCK SYSTEM ==================== -->
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const journalUnlocked = localStorage.getItem('journalUnlocked') === 'true';
+    const journalBtn = document.getElementById('journalBtn');
+    
+    if (journalBtn && journalUnlocked) {
+      journalBtn.style.display = 'flex';
+    }
+  });
+
+  function showJournalUnlockNotification() {
+    const notification = document.createElement('div');
+    notification.className = 'journal-unlock-notification';
+    notification.innerHTML = `
+      <div class="journal-unlock-icon">📖</div>
+      <div class="journal-unlock-text">
+        <div class="journal-unlock-title">The Keeper's Journal</div>
+        <div class="journal-unlock-desc">Press the book icon to access guidance</div>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add('show'), 100);
+    setTimeout(() => {
+      notification.classList.remove('show');
+      setTimeout(() => notification.remove(), 500);
+    }, 6000);
+  }
+
+  // Expose globally for achievements.js
+  window.showJournalUnlockNotification = showJournalUnlockNotification;
   </script>
 
   <!-- ==================== PERFECT PATH UNLOCK ==================== -->
@@ -353,60 +470,58 @@ footer {
   </script>
 
   <!-- ==================== TITLE SCREEN FADE ==================== -->
-<!-- Find this section in index.html (around line 380) and REPLACE it with this: -->
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const overlayStart = document.getElementById("start-overlay");
+    const mainContent = document.querySelector("main");
+    const startBtn = document.getElementById("start-btn");
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const overlayStart = document.getElementById("start-overlay");
-  const mainContent = document.querySelector("main");
-  const startBtn = document.getElementById("start-btn");
+    if (!overlayStart || !mainContent || !startBtn) return;
 
-  if (!overlayStart || !mainContent || !startBtn) return;
-
-  // Check if this is first play or a reset
-  const hasPlayed = localStorage.getItem("hasPlayed") === "true";
-  const isReset = window.location.search.includes("reset=");
-  
-  if (hasPlayed && !isReset) {
-    // Skip intro - go straight to crossroads
-    overlayStart.style.display = "none";
-    mainContent.style.display = "block";
+    // Check if this is first play or a reset
+    const hasPlayed = localStorage.getItem("hasPlayed") === "true";
+    const isReset = window.location.search.includes("reset=");
     
-    // Hide intro text, show only choices
-    document.getElementById("storyText").style.display = "none";
-    document.getElementById("choices-section").style.opacity = "1";
-    
-    refreshInventoryBoxSafe();
-  } else {
-    // First play or reset - show full intro
-    startBtn.addEventListener("click", () => {
-      overlayStart.style.opacity = "0";
+    if (hasPlayed && !isReset) {
+      // Skip intro - go straight to crossroads
+      overlayStart.style.display = "none";
+      mainContent.style.display = "block";
       
-      setTimeout(() => {
-        overlayStart.style.display = "none";
-        mainContent.style.display = "block";
+      // Hide intro text, show only choices
+      document.getElementById("storyText").style.display = "none";
+      document.getElementById("choices-section").style.opacity = "1";
+      
+      refreshInventoryBoxSafe();
+    } else {
+      // First play or reset - show full intro
+      startBtn.addEventListener("click", () => {
+        overlayStart.style.opacity = "0";
         
-        // Mark as played
-        localStorage.setItem("hasPlayed", "true");
-        
-        refreshInventoryBoxSafe();
-        
-        // Fade in story paragraphs one by one
-        setTimeout(() => document.getElementById("line1").style.opacity = "1", 300);
-        setTimeout(() => document.getElementById("line2").style.opacity = "1", 2200);
-        setTimeout(() => document.getElementById("line3").style.opacity = "1", 4100);
-        setTimeout(() => document.getElementById("line4").style.opacity = "1", 6000);
-        
-        // Show choices after all text has appeared
         setTimeout(() => {
-          document.getElementById("choices-section").style.opacity = "1";
-        }, 8000);
-        
-      }, 2000);
-    });
-  }
-});
-</script>
+          overlayStart.style.display = "none";
+          mainContent.style.display = "block";
+          
+          // Mark as played
+          localStorage.setItem("hasPlayed", "true");
+          
+          refreshInventoryBoxSafe();
+          
+          // Fade in story paragraphs one by one
+          setTimeout(() => document.getElementById("line1").style.opacity = "1", 300);
+          setTimeout(() => document.getElementById("line2").style.opacity = "1", 2200);
+          setTimeout(() => document.getElementById("line3").style.opacity = "1", 4100);
+          setTimeout(() => document.getElementById("line4").style.opacity = "1", 6000);
+          
+          // Show choices after all text has appeared
+          setTimeout(() => {
+            document.getElementById("choices-section").style.opacity = "1";
+          }, 8000);
+          
+        }, 2000);
+      });
+    }
+  });
+  </script>
 
   <!-- ==================== BRIDGE FLAG SETUP ==================== -->
   <script>
@@ -425,71 +540,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   </script>
-/* =========================================================
-   RESET BUTTON FIX - Add to every HTML page
-   Place this BEFORE the closing </body> tag
-   ========================================================= */
 
-<script>
-// === Universal Reset Player Button ===
-document.addEventListener("DOMContentLoaded", () => {
-  const resetBtn = document.getElementById("resetBtn");
-  if (!resetBtn) return;
-  
-  // Remove any existing event listeners by cloning
-  const newResetBtn = resetBtn.cloneNode(true);
-  resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
-  
-  // Add fresh click handler
-  newResetBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log("Reset button clicked");
-    
-    // Confirm with user
-    const confirmed = confirm("Reset your entire journey? This will erase all progress, inventory, memories, and achievements.");
-    
-    if (!confirmed) {
-      console.log("Reset cancelled by user");
-      return;
-    }
-    
-    console.log("User confirmed reset");
-    
-    // Show fade overlay
-    let overlay = document.getElementById("overlay");
-    if (!overlay) {
-      overlay = document.createElement("div");
-      overlay.className = "shade-fade";
-      overlay.id = "overlay";
-      document.body.appendChild(overlay);
-    }
-    overlay.classList.add("active");
-    
-    // Clear everything after a brief delay
-    setTimeout(() => {
-      try {
-        // Clear all localStorage
-        localStorage.clear();
-        console.log("localStorage cleared");
-        
-        // Clear sessionStorage too
-        sessionStorage.clear();
-        console.log("sessionStorage cleared");
-        
-        // Redirect to index with cache-busting parameter
-        const timestamp = Date.now();
-        window.location.href = `index.html?reset=${timestamp}`;
-      } catch (err) {
-        console.error("Reset error:", err);
-        alert("Error resetting game. Please try refreshing the page manually.");
-      }
-    }, 1000);
-  });
-  
-  console.log("Reset button initialized");
-});
-</script>
 </body>
 </html>
