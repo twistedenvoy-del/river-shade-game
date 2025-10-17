@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The River Shade – The Keeper's Journal</title>
+  <title>The River Shade — The Keeper's Journal</title>
   <link href="style.css" rel="stylesheet"/>
   <link href="mobile.css" rel="stylesheet"/>
   <style>
@@ -51,6 +51,10 @@
     
     .back-link:hover {
       background: rgba(156,207,255,0.1);
+    }
+    
+    .back-link:active {
+      transform: scale(0.98);
     }
     
     section {
@@ -128,12 +132,17 @@
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
       transition: all 0.3s;
+      text-shadow: none;
     }
     
     .spoiler:hover,
     .spoiler.revealed {
       background: rgba(156,207,255,0.1);
       color: #d0eaff;
+    }
+    
+    .spoiler:active {
+      transform: scale(0.98);
     }
     
     .navigation {
@@ -157,6 +166,10 @@
       background: rgba(156,207,255,0.1);
     }
     
+    .nav-link:active {
+      transform: scale(0.98);
+    }
+    
     .completion-tracker {
       background: rgba(156,207,255,0.05);
       padding: 1rem;
@@ -176,6 +189,22 @@
       background: linear-gradient(90deg, #4a90e2, #9cf);
       height: 100%;
       transition: width 0.5s ease;
+    }
+    
+    /* Mobile-specific improvements */
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      .navigation {
+        gap: 0.3rem;
+      }
+      
+      .nav-link {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+      }
     }
   </style>
 </head>
@@ -213,20 +242,20 @@
     <div class="hint">Click on items in your inventory box to examine them and unlock the Lore Keeper achievement.</div>
     
     <h3>Rusty Key (Fragment of Rust)</h3>
-    <p><strong>Location:</strong> <span class="spoiler" onclick="this.classList.add('revealed')">Hidden in the riverbank silt after visiting from the Haunt</span></p>
+    <p><strong>Location:</strong> <span class="spoiler">Hidden in the riverbank silt after visiting from the Haunt</span></p>
     <p><strong>Purpose:</strong> Opens the cellar wall to reveal the River's Heart</p>
     
     <h3>The River's Heart</h3>
-    <p><strong>Location:</strong> <span class="spoiler" onclick="this.classList.add('revealed')">Hidden alcove in the Cellar (requires Rusty Key)</span></p>
+    <p><strong>Location:</strong> <span class="spoiler">Hidden alcove in the Cellar (requires Rusty Key)</span></p>
     <p><strong>Purpose:</strong> Essential for unlocking the True Alt Ending</p>
     <div class="hint">This is the most important item for progression.</div>
     
     <h3>The Shade's Mark</h3>
-    <p><strong>Location:</strong> <span class="spoiler" onclick="this.classList.add('revealed')">Automatically given after your first death at the riverbank</span></p>
+    <p><strong>Location:</strong> <span class="spoiler">Automatically given after your first death at the riverbank</span></p>
     <p><strong>Purpose:</strong> Proves you've touched the Shade's reflection</p>
     
     <h3>Silver Coin</h3>
-    <p><strong>Location:</strong> <span class="spoiler" onclick="this.classList.add('revealed')">Under floorboards in the Tavern (only appears after investigating the Bridge)</span></p>
+    <p><strong>Location:</strong> <span class="spoiler">Under floorboards in the Tavern (only appears after investigating the Bridge)</span></p>
     <p><strong>Purpose:</strong> Part of the collection, represents "the price"</p>
   </section>
 
@@ -306,71 +335,53 @@
     </div>
     
     <div class="secret">
-      <div class="secret-header">Memory 5: The Town (Fragment of Memory/Journal)</div>
-      <p><strong>Item needed:</strong> Fragment of Memory (received from Cellar)</p>
-      <p><strong>How to unlock:</strong> After getting the journal from the Cellar memory, visit Town and examine the town square.</p>
+      <div class="secret-header">Memory 5: The Town (Fragment of Echo)</div>
+      <p><strong>Item needed:</strong> Fragment of Echo (from Haunt)</p>
+      <p><strong>How to unlock:</strong> After Haunt memory, visit Town with the Echo fragment.</p>
     </div>
     
-    <h3>Optimal Route</h3>
+    <h3>Recommended Path Order</h3>
     <ol>
-      <li>Tavern (unlocks Riverbank & Haunt)</li>
-      <li>Riverbank → Get Fragment of Still Water</li>
-      <li>Return to Tavern → Unlock Memory 1</li>
-      <li>Town (now unlocked) → Get Fragment of Rust</li>
-      <li>Return to Riverbank → Unlock Memory 2</li>
-      <li>Haunt → Get River's Heart</li>
-      <li>Cellar (now unlocked) → Unlock Memory 3 + Get Journal</li>
-      <li>Waterfront (now unlocked) → Get Shade's Mark</li>
-      <li>Return to Haunt → Unlock Memory 4</li>
-      <li>Return to Town → Unlock Memory 5</li>
-      <li>Bridge (now accessible) → Final confrontation</li>
+      <li>Start at Tavern (explore but don't unlock memory yet)</li>
+      <li>Visit Riverbank → collect Fragment of Still Water</li>
+      <li>Return to Tavern → unlock Memory 1</li>
+      <li>Visit Town → collect Fragment of Rust</li>
+      <li>Return to Riverbank → unlock Memory 2</li>
+      <li>Visit Haunt → collect River's Heart</li>
+      <li>Visit Cellar → unlock Memory 3 (unlocks Waterfront)</li>
+      <li>Visit Waterfront → collect Shade's Mark</li>
+      <li>Return to Haunt → unlock Memory 4</li>
+      <li>Visit Town → unlock Memory 5</li>
+      <li>Visit Bridge → final confrontation</li>
     </ol>
   </section>
 
   <!-- Secrets Section -->
   <section id="secrets">
-    <h2>🔮 Hidden Secrets & Easter Eggs</h2>
+    <h2>🔮 Hidden Secrets</h2>
     
-    <div class="secret">
-      <div class="secret-header">The Voice at the Investigation Site</div>
-      <p><strong>How to trigger:</strong> Visit the Investigation option from Riverbank with either the Journal or Rusty Key. The Voice will speak to you.</p>
-      <p><strong>Reward:</strong> "The Voice Remembers" achievement + deeper lore understanding</p>
-      <div class="hint">Without items, this leads to death. With protection, you hear important lore.</div>
-    </div>
+    <h3>The Waterfront</h3>
+    <p><strong>How to unlock:</strong> <span class="spoiler">Complete the Cellar memory in the Perfect Path</span></p>
+    <p>A secret location that appears only after you've proven you can face your drowned promises.</p>
     
-    <div class="secret">
-      <div class="secret-header">Chapel Rest (Hidden Death Scene)</div>
-      <p><strong>How to trigger:</strong> Visit Town twice, or visit Town with any item collected. The chapel rest option appears.</p>
-      <p><strong>Meaning:</strong> Represents isolation and the danger of withdrawing from the world.</p>
-    </div>
+    <h3>Multiple Playthroughs Matter</h3>
+    <p>The river remembers every drowning. Each death changes the awakening scene slightly, revealing more about the Shade's nature and your connection to it.</p>
     
-    <div class="secret">
-      <div class="secret-header">Tavern Whispers (Hidden Death Scene)</div>
-      <p><strong>How to trigger:</strong> Return to the Tavern after collecting any item or on a second visit. Choose to "Listen carefully to the whispers."</p>
-      <p><strong>Meaning:</strong> Represents being consumed by negative self-talk.</p>
-    </div>
+    <h3>The Investigation Site</h3>
+    <p>Visit the Bridge early without items to discover a hidden investigation location. <span class="spoiler">Returning here after collecting items reveals crucial lore.</span></p>
     
-    <div class="secret">
-      <div class="secret-header">The Double Drowning</div>
-      <p><strong>How to trigger:</strong> Die at the Riverbank (reach out), then return and reach out again.</p>
-      <p><strong>Reward:</strong> "The River Remembers" achievement + special dialogue</p>
-    </div>
-    
-    <div class="secret">
-      <div class="secret-header">Bridge Lore Revelation</div>
-      <p><strong>How to trigger:</strong> Collect all 5 items, then investigate the Bridge.</p>
-      <p><strong>Result:</strong> The Shade reveals its complete backstory and purpose.</p>
-      <div class="hint">This is essential for unlocking the True Alt Ending path.</div>
-    </div>
+    <h3>Item Examination</h3>
+    <p>Click on items in your inventory box to read their descriptions. Some items reveal hidden lore when examined in specific locations.</p>
   </section>
 
-  <!-- Death Scenes Section -->
+  <!-- Deaths Section -->
   <section id="deaths">
-    <h2>💀 Death & Awakening Narratives</h2>
-    <p>Each death reveals more about the nature of the river and the Shade. The awakening scenes evolve based on how many times you've died:</p>
+    <h2>💀 Death & Awakening</h2>
     
-    <ul class="item-list">
-      <li><strong>First Death:</strong> Confusion and disorientation. You receive the Shade's Mark.</li>
+    <h3>The Seven Awakenings</h3>
+    <p>Each death changes how you wake:</p>
+    <ul>
+      <li><strong>First Death:</strong> Confusion. You receive the Shade's Mark.</li>
       <li><strong>Second Death:</strong> Recognition. The Shade asks "Again?"</li>
       <li><strong>Third Death:</strong> Familiarity. You can't tell concern from mockery anymore.</li>
       <li><strong>Fourth Death:</strong> Weariness. Your reflection looks tired of waiting.</li>
@@ -439,9 +450,13 @@
     <h2>📜 Understanding the Lore</h2>
     
     <h3>What is the Shade?</h3>
-    <p class="spoiler" onclick="this.classList.add('revealed')">
-      The Shade is the manifestation of depression and self-doubt - the voice that tells you to give up, that you're not good enough, that the world would be better without you. It was once the "bridge itself" - the last soul to cross when the world forgot how to return.
-    </p>
+    <p class="spoiler">The Shade is the manifestation of depression and self-doubt - the voice that tells you to give up, that you're not good enough, that the world would be better without you. It's not evil; it's scared. It's the part of you that drowns repeatedly trying to protect you from more pain.</p>
+    
+    <h3>What is the River?</h3>
+    <p class="spoiler">The river is the cycle of depression itself - the constant pull toward darkness, the feeling of drowning, the endless loop of waking up and doing it all over again. The fog is dissociation, the bridge is the moment of choice, and the fragments are pieces of your psyche scattered by trauma.</p>
+    
+    <h3>Who is the player character?</h3>
+    <p class="spoiler">You are someone struggling with mental illness, trapped in cycles of depression and self-harm. The game represents your internal landscape. Each location is a different aspect of your psyche, each death a crisis moment, each awakening a chance to try again. The player character was once the "bridge itself" - the last soul to cross when the world forgot how to return.</p>
     
     <h3>What do the fragments represent?</h3>
     <ul>
@@ -453,9 +468,7 @@
     </ul>
     
     <h3>What does the Perfect Ending mean?</h3>
-    <p class="spoiler" onclick="this.classList.add('revealed')">
-      The Perfect Ending represents learning to live with depression/BPD rather than being consumed by it or pretending it doesn't exist. The player character wakes up with loved ones, tells them about the nightmare, and when they see the Shade in the mirror, they don't run - they say "Welcome home, Shade." This is acceptance and coexistence with your mental health struggles.
-    </p>
+    <p class="spoiler">The Perfect Ending represents learning to live with depression/BPD rather than being consumed by it or pretending it doesn't exist. The player character wakes up with loved ones, tells them about the nightmare, and when they see the Shade in the mirror, they don't run - they say "Welcome home, Shade." This is acceptance and coexistence with your mental health struggles.</p>
     
     <h3>The Cycle</h3>
     <p>Each playthrough represents a cycle of depression, death, and awakening. The more you play, the more you understand. The Shade isn't trying to hurt you - it's trapped in the same cycle, afraid of being abandoned. Only by gathering all the pieces of what was lost can you break free.</p>
@@ -469,7 +482,7 @@
   </footer>
 
   <script>
-    // Track which sections have been viewed
+    // Track which sections have been viewed for analytics
     const sections = document.querySelectorAll('section[id]');
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -481,7 +494,7 @@
     
     sections.forEach(section => observer.observe(section));
     
-    // Add smooth scrolling
+    // Add smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -490,6 +503,26 @@
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
+    });
+    
+    // Improved spoiler handling - moved from inline onclick
+    document.querySelectorAll('.spoiler').forEach(spoiler => {
+      spoiler.addEventListener('click', function() {
+        this.classList.add('revealed');
+      });
+      
+      // Also add keyboard accessibility
+      spoiler.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.classList.add('revealed');
+        }
+      });
+      
+      // Make focusable
+      spoiler.setAttribute('tabindex', '0');
+      spoiler.setAttribute('role', 'button');
+      spoiler.setAttribute('aria-label', 'Click to reveal spoiler');
     });
   </script>
 
