@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The River Shade – Perfect Path</title>
 <link rel="stylesheet" href="style.css">
-    <link href="mobile.css" rel="stylesheet"/>
+<link href="mobile.css" rel="stylesheet"/>
 <style>
-  body{background:#000;color:#ddd;font-family:Georgia,serif;padding:2rem;overflow:hidden;}
+  body{background:#000;color:#ddd;font-family:Georgia,serif;padding:2rem;overflow-x:hidden;overflow-y:auto;}
   h1{font-size:1.8rem;text-align:center;margin-bottom:1rem;color:#cfeafc;}
   .fade-line{opacity:0;text-align:center;transition:opacity 2s ease;font-size:1.2rem;margin:0.8rem 0;}
   .choice{display:block;color:#9cf;text-decoration:none;margin:.8rem 0;padding:.4rem .8rem;border:1px solid #9cf;border-radius:8px;max-width:360px;}
@@ -39,7 +38,8 @@
   <div class="fade-line">You wake beneath the river's surface – not drowning, but breathing as if the water itself remembers you.</div>
   <div class="fade-line">Shadows move above, slow and deliberate, waiting.</div>
   <div class="fade-line">Something whispers... your name?</div>
-  <div class="fade-line">You stand, dripping and weightless. The world feels rearranged.</div>
+  <div class="fade-line">You stand, dripping and weightless.</div>
+  <div class="fade-line">The world feels rearranged.</div>
   <div class="fade-line">The fragments pulse faintly, whispering new directions.</div>
 </div>
 
@@ -153,64 +153,54 @@ function buildLinks(){
     if(isNew) localStorage.setItem('town_badge_shown','true');
   }
 
-  // Waterfront unlocks from cellar
-  if(localStorage.getItem('visited_waterfront')==='true' || localStorage.getItem('perfectWaterfrontUnlocked')==='true'){
-    const isNew = localStorage.getItem('memory_cellar')==='true' && !localStorage.getItem('waterfront_badge_shown');
+  // Check for Cellar memory completion -> unlock Waterfront
+  const cellarMemDone = localStorage.getItem('memory_cellar')==='true';
+  if(cellarMemDone){
+    localStorage.setItem('visited_waterfront','true');
+  }
+
+  if(localStorage.getItem('visited_waterfront')==='true'){
+    const isNew = cellarMemDone && !localStorage.getItem('waterfront_badge_shown');
     links.push({
       href:'perfect_waterfront.html',
-      text:'🌊 Follow the Current to the Waterfront',
+      text:'🌑 Walk to the Waterfront',
       badge: isNew ? 'NEW' : null
     });
     if(isNew) localStorage.setItem('waterfront_badge_shown','true');
   }
 
-  // Bridge appears when all memories collected
-  const allKeys=['memory_tavern','memory_cellar','memory_riverbank','memory_haunt','memory_town'];
-  const allMem=allKeys.every(k=>localStorage.getItem(k)==='true');
-  if(allMem){
-    links.push({href:'perfect_bridge.html',text:'🌉 Confront the Shade at the Bridge',badge:'FINAL'});
+  // Check for all 5 memories -> unlock bridge
+  const allMemCollected = ['tavern','cellar','riverbank','haunt','town']
+    .every(k => localStorage.getItem('memory_'+k)==='true');
+  if(allMemCollected){
+    localStorage.setItem('visited_bridge','true');
   }
 
-  const container=document.getElementById('links');
-  container.innerHTML='';
-  links.forEach(l=>{
+  if(localStorage.getItem('visited_bridge')==='true'){
+    links.push({href:'perfect_bridge.html',text:'🌉 Approach the Bridge'});
+  }
+
+  // Render
+  const cont=document.getElementById('links');
+  cont.innerHTML='';
+  links.forEach(({href,text,badge})=>{
     const a=document.createElement('a');
     a.className='choice';
-    a.href=l.href;
-    a.textContent=l.text;
-    if(l.badge){
-      const badge = document.createElement('span');
-      badge.className = 'unlocked-badge';
-      badge.textContent = l.badge;
-      a.appendChild(document.createTextNode(' '));
-      a.appendChild(badge);
+    a.href=href;
+    a.innerHTML=text;
+    if(badge){
+      const sp=document.createElement('span');
+      sp.className='unlocked-badge';
+      sp.textContent=badge;
+      a.appendChild(sp);
     }
-    container.appendChild(a);
+    cont.appendChild(a);
   });
 
-  // Show alert if returning from various locations with new unlocks
-  const last=localStorage.getItem('last_perfect_visit');
-  if(last==='perfect_riverbank' && localStorage.getItem('memory_riverbank')==='true'){
-    showMemoryAlert('The current hums softly... new paths have opened.');
-    localStorage.removeItem('last_perfect_visit');
-  }
-  else if(last==='perfect_tavern'){
-    showMemoryAlert('New paths have opened beyond the tavern.');
-    localStorage.removeItem('last_perfect_visit');
-  }
-  else if(last==='perfect_cellar' && localStorage.getItem('memory_cellar')==='true'){
-    showMemoryAlert('The waterfront calls to you...');
-    localStorage.removeItem('last_perfect_visit');
-  }
-  else if(last==='perfect_waterfront'){
-    showMemoryAlert('The Shade\'s mark burns with purpose...');
-    localStorage.removeItem('last_perfect_visit');
-  }
-  
-  // Check if all memories collected - show special alert
-  if(allMem && !localStorage.getItem('bridge_alert_shown')){
+  // Show special alert if bridge just unlocked
+  if(allMemCollected && !localStorage.getItem('bridge_alert_shown')){
     setTimeout(()=>{
-      showMemoryAlert('All fragments resonate... The bridge awaits.');
+      showMemoryAlert('All memories collected. The bridge awaits.');
       localStorage.setItem('bridge_alert_shown','true');
     },1000);
   }
