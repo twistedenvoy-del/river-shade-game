@@ -140,20 +140,50 @@
   const invList = document.getElementById('inventory-list');
 
   function updateInventory() {
+    // Re-read from localStorage to ensure we have the latest
+    inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+    
     const displayItems = inventory.map(item => {
       if (typeof item === 'string') return item;
       if (item && typeof item === 'object' && item.name) return item.name;
       return JSON.stringify(item);
     });
     invList.textContent = displayItems.length ? displayItems.join(', ') : 'Empty';
-    localStorage.setItem('inventory', JSON.stringify(inventory));
+    
+    console.log("Inventory updated:", displayItems);
   }
+  
+  function addItemToInventory(item) {
+    console.log("Adding item to inventory:", item);
+    
+    // Re-read inventory from storage to get latest state
+    inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+    
+    // Check if item already exists
+    const alreadyHas = inventory.some(i => {
+      if (typeof i === 'string' && typeof item === 'string') return i === item;
+      if (i.id && item.id) return i.id === item.id;
+      if (i.name && item.name) return i.name === item.name;
+      return false;
+    });
+    
+    if (!alreadyHas) {
+      inventory.push(item);
+      localStorage.setItem('inventory', JSON.stringify(inventory));
+      console.log("Item added successfully. New inventory:", inventory);
+      updateInventory();
+      return true;
+    } else {
+      console.log("Item already in inventory");
+      return false;
+    }
+  }
+  
   updateInventory();
 
   // Live sync inventory
   window.addEventListener('storage', (event) => {
     if (event.key === 'inventory') {
-      inventory = JSON.parse(localStorage.getItem('inventory')) || [];
       updateInventory();
     }
   });
@@ -230,7 +260,8 @@
           const hasHeart = inventory.some(item => {
             const name = (typeof item === 'string') ? item : (item && item.name ? item.name : '');
             return name.toLowerCase().replace(/'/g, "'").includes("river's heart") || 
-                   name.toLowerCase().includes("riverheart");
+                   name.toLowerCase().includes("riverheart") ||
+                   name.toLowerCase().includes("heart");
           });
 
           console.log("Has River's Heart:", hasHeart);
@@ -270,37 +301,45 @@
               }, 8000);
 
               setTimeout(() => {
+                console.log("=== STARTING MEMORY UNLOCK SEQUENCE ===");
+                
                 // SET FLAGS - both naming conventions
                 localStorage.setItem('memory_cellar', 'true');
                 localStorage.setItem('cellarMemoryUnlocked', 'true');
                 localStorage.setItem('perfectWaterfrontUnlocked', 'true');
                 localStorage.setItem('visited_waterfront', 'true');
+                console.log("Memory flags set");
 
-                // Add Fragment of Memory to inventory
-                const gained = !inventory.some(i => 
-                  (i.id === 'journal' || (i.name && i.name.includes('Fragment of Memory')))
-                );
-                if (gained) {
-                  inventory.push({id: 'journal', name: 'Fragment of Memory'});
-                  localStorage.setItem('inventory', JSON.stringify(inventory));
-                  updateInventory();
+                // Add Fragment of Memory to inventory - IMPROVED VERSION
+                const journalItem = {id: 'journal', name: 'Fragment of Memory'};
+                const itemAdded = addItemToInventory(journalItem);
+                
+                if (itemAdded) {
+                  console.log("✓ Fragment of Memory added to inventory!");
+                } else {
+                  console.log("Fragment of Memory already in inventory");
                 }
 
+                // Hide overlays
                 alertBox.style.opacity = 0;
                 memoryText.style.opacity = 0;
                 fadeOverlay.style.opacity = 0;
                 fadeOverlay.style.pointerEvents = "none";
                 
+                // Show completion message
                 content.innerHTML = `
                   <h1>The current pulls you forward</h1>
                   <p>The fragment of memory lingers, refusing to fade.</p>
-                  <p><em>You acquired: Fragment of Memory (Journal)</em></p>
+                  <p style="color:#9cf; font-weight: bold;"><em>✓ You acquired: Fragment of Memory (Journal)</em></p>
                   <p style="color:#9fbfff; margin-top:1.5rem;"><em>A new path opens... the waterfront calls to you.</em></p>
                   <div id="choices">
                     <a href="perfect_waterfront.html" class="choice">Follow the current to the Waterfront</a>
                     <a href="perfect_path.html" class="choice">Return to the River Shade</a>
                   </div>
                 `;
+                
+                console.log("=== MEMORY UNLOCK COMPLETE ===");
+                console.log("Final inventory state:", JSON.parse(localStorage.getItem('inventory')));
               }, 11000);
             }, 2000);
           } else {
