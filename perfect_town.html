@@ -1,30 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The River Shade – Perfect Town</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The River Shade | Perfect Town</title>
 <link rel="stylesheet" href="style.css">
-    <link href="mobile.css" rel="stylesheet"/>
+<link href="mobile.css" rel="stylesheet"/>
 <style>
-body{background:#000;color:#ccc;font-family:'Georgia',serif;text-align:center;padding:2em;}
-.container{max-width:760px;margin:0 auto;}
-.fade-line{opacity:0;transition:opacity 2.8s ease;margin:1em 0;}
-.choice{display:block;color:#9cf;text-decoration:none;margin:1em 0;padding:0.4rem 0.8rem;border:1px solid #9cf;border-radius:8px;}
-.choice:hover{opacity:.85;}
-#inventory-box{position:fixed;bottom:1rem;right:1rem;background:rgba(0,0,0,0.6);border:1px solid #888;padding:.6rem 1rem;border-radius:8px;font-family:monospace;color:#eee;z-index:1000;}
-#fade-overlay{position:fixed;left:0;top:0;width:100%;height:100%;background:#000;opacity:0;pointer-events:none;z-index:2000;transition:opacity 2.2s ease;}
-.memory-line{color:#9fbfff;font-style:italic;text-align:center;font-size:1.2rem;opacity:0;transition:opacity 1.6s ease;margin:1em 0;}
-#memory-alert{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#062134,#0f2740);color:#cfeafc;padding:10px 18px;border-radius:10px;opacity:0;transition:opacity .6s;z-index:2100;font-family:monospace;}
+  body{background:#000;color:#dfeeff;font-family:Georgia,serif;padding:2rem;text-align:center;}
+  .choice{display:block;color:#9cf;text-decoration:none;margin:1rem auto;padding:.4rem .8rem;border:1px solid #9cf;border-radius:8px;max-width:300px;}
+  #inventory-box{position:fixed;right:1rem;bottom:1rem;background:rgba(0,0,0,0.6);border:1px solid #567;padding:.6rem 1rem;border-radius:8px;color:#dfeeff;font-family:monospace;z-index:1000;}
+  #fade-overlay{position:fixed;left:0;top:0;width:100%;height:100%;background:#000;opacity:0;pointer-events:none;z-index:2000;transition:opacity 2.2s ease;}
+  .fade-line{opacity:0;transition:opacity 1.6s ease;margin:1.2em 0;}
+  .memory-line{color:#9fbfff;font-style:italic;text-align:center;font-size:1.2rem;opacity:0;transition:opacity 1.6s ease;}
+  #memory-alert{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#062134,#0f2740);color:#cfeafc;padding:10px 18px;border-radius:10px;opacity:0;transition:opacity .6s;z-index:2100;font-family:monospace;}
 </style>
 </head>
 <body data-scene="perfect_town">
-<main class="container">
+
+<main id="scene">
   <h1>The Perfect Town</h1>
 
-  <section id="scene" class="scene-text">
-    <p class="fade-line" id="line-1">The streets are empty in a way that feels deliberate – as though everyone has been paused mid-thought.</p>
-    <p class="fade-line" id="line-2">No voices. No wind. The only sound is the slow tick of your breath.</p>
+  <section id="scene-content">
+    <p id="line-1" class="fade-line">The streets are empty, but not abandoned.</p>
+    <p id="line-2" class="fade-line">No wind. The only sound is the slow tick of your breath.</p>
 
     <div id="dynamic"></div>
 
@@ -41,44 +40,68 @@ body{background:#000;color:#ccc;font-family:'Georgia',serif;text-align:center;pa
 localStorage.setItem('visited_town', 'true');
 localStorage.setItem('last_perfect_visit', 'perfect_town');
 
-// ---------- Utility ----------
-function refreshInventory(){
-  const box=document.getElementById("inventory-box");
-  const inv=JSON.parse(localStorage.getItem("inventory")||"[]");
-  box.innerHTML="<strong>Inventory</strong><br>"+(inv.length?inv.map(i=>i.name||i.id).join("<br>"):"(empty)");
+// ---------- SHARED INVENTORY FUNCTIONS ----------
+function getInventory() {
+  return JSON.parse(localStorage.getItem('inventory') || '[]');
 }
 
-function addItem(item){
-  let inv=JSON.parse(localStorage.getItem("inventory")||"[]");
-  if(!inv.some(i=>i.id===item.id)){
-    inv.push(item);
-    localStorage.setItem("inventory",JSON.stringify(inv));
-    refreshInventory();
-    return true;
+function saveInventory(inv) {
+  localStorage.setItem('inventory', JSON.stringify(inv));
+}
+
+function hasItemInInventory(searchTerm) {
+  const inv = getInventory();
+  return inv.some(item => {
+    const name = (typeof item === 'string') ? item : (item.name || item.id || '');
+    return name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+}
+
+function addToInventory(item) {
+  const inv = getInventory();
+  
+  // Check if already has it (by id)
+  if (inv.some(i => i.id === item.id)) {
+    console.log("Item already collected:", item.id);
+    return false;
   }
-  return false;
+  
+  inv.push(item);
+  saveInventory(inv);
+  refreshInventory();
+  console.log("✓ Item added:", item);
+  return true;
+}
+
+function refreshInventory(){
+  const box = document.getElementById("inventory-box");
+  const inv = getInventory();
+  box.innerHTML = "<strong>Inventory</strong><br>" + 
+    (inv.length ? inv.map(i => i.name || i.id).join("<br>") : "(empty)");
 }
 
 function pulseText(lines, delay=2800, onDone=null){
-  const c=document.getElementById("dynamic");
-  c.innerHTML="";
-  lines.forEach((t,i)=>{
-    const p=document.createElement("p");
-    p.className="fade-line";
-    p.innerHTML=t;
+  const c = document.getElementById("dynamic");
+  c.innerHTML = "";
+  lines.forEach((t,i) => {
+    const p = document.createElement("p");
+    p.className = "fade-line";
+    p.innerHTML = t;
     c.appendChild(p);
-    setTimeout(()=>p.style.opacity=1, i*delay);
+    setTimeout(() => p.style.opacity = 1, i * delay);
   });
-  if(onDone) setTimeout(onDone, lines.length*delay+600);
+  if(onDone) setTimeout(onDone, lines.length * delay + 600);
 }
 
 function showChoices(arr){
-  const div=document.getElementById("choices");
-  div.innerHTML="";
-  arr.forEach(o=>{
-    const a=document.createElement("a");
-    a.href="#";a.className="choice";a.textContent=o.text;
-    a.onclick=(e)=>{e.preventDefault(); o.action();};
+  const div = document.getElementById("choices");
+  div.innerHTML = "";
+  arr.forEach(o => {
+    const a = document.createElement("a");
+    a.href = "#";
+    a.className = "choice";
+    a.textContent = o.text;
+    a.onclick = (e) => {e.preventDefault(); o.action();};
     div.appendChild(a);
   });
 }
@@ -86,96 +109,110 @@ function showChoices(arr){
 // ---------- Scene Logic ----------
 function beginTown(){
   // Fade in opening lines first
-  setTimeout(()=>{
-    document.getElementById("line-1").style.opacity=1;
+  setTimeout(() => {
+    document.getElementById("line-1").style.opacity = 1;
   }, 100);
-  setTimeout(()=>{
-    document.getElementById("line-2").style.opacity=1;
+  setTimeout(() => {
+    document.getElementById("line-2").style.opacity = 1;
   }, 1000);
 
-  const lines=[
-    "A child's kite hangs motionless in the square, its string a frozen question.",
-    "Shutters hang open like tired eyes. The streets watch you, and say nothing.",
-    "There is a hollow in the center of the marketplace – a small iron box embedded in the cobblestone."
-  ];
+  // Check if key already collected
+  const hasKey = hasItemInInventory("rust") || hasItemInInventory("key");
   
-  setTimeout(()=>{
-    pulseText(lines,2800,()=> {
-      showChoices([
-        { text: "Inspect the iron box", action: inspectBox },
-        { text: "Leave the town", action: ()=> window.location.href = "perfect_path.html" }
-      ]);
-    });
-  }, 2000);
+  if (hasKey) {
+    // Skip directly to choices if key already collected
+    const lines = [
+      "A child's kite hangs motionless in the square, its string a frozen question.",
+      "Shutters hang open like tired eyes. The streets watch you, and say nothing.",
+      "The iron box sits empty in the marketplace, its lock pried free long ago."
+    ];
+    
+    setTimeout(() => {
+      pulseText(lines, 2800, () => {
+        showChoices([
+          { text: "Examine the town square", action: examineTown },
+          { text: "Leave the town", action: () => window.location.href = "perfect_path.html" }
+        ]);
+      });
+    }, 2000);
+  } else {
+    // Show key collection scene
+    const lines = [
+      "A child's kite hangs motionless in the square, its string a frozen question.",
+      "Shutters hang open like tired eyes. The streets watch you, and say nothing.",
+      "There is a hollow in the center of the marketplace — a small iron box embedded in the cobblestone."
+    ];
+    
+    setTimeout(() => {
+      pulseText(lines, 2800, () => {
+        showChoices([
+          { text: "Inspect the iron box", action: inspectBox },
+          { text: "Leave the town", action: () => window.location.href = "perfect_path.html" }
+        ]);
+      });
+    }, 2000);
+  }
 
   refreshInventory();
 }
 
 function inspectBox(){
-  const c=document.getElementById("dynamic");
-  const lines=[
+  const c = document.getElementById("dynamic");
+  const lines = [
     "The box is sealed with a rusted padlock. The lock looks like a mouth that was never fed.",
     "When you run your fingers along it, a tiny piece of metal loosens, catching on your skin.",
     "You pry the lock free; something small slides into your palm."
   ];
-  pulseText(lines,2800,()=> {
+  pulseText(lines, 2800, () => {
     showChoices([
       { text: "Take the fragment of rust (Key)", action: takeKey },
-      { text: "Leave it be", action: ()=> window.location.href = "perfect_path.html" }
+      { text: "Leave it be", action: () => window.location.href = "perfect_path.html" }
     ]);
   });
 }
 
 function takeKey(){
-  const added = addItem({ id:"key", name:"Fragment of Rust" });
-  const c=document.getElementById("dynamic");
-  const p=document.createElement("p");
-  p.className="fade-line";
+  const added = addToInventory({ id: "key", name: "Fragment of Rust" });
+  const c = document.getElementById("dynamic");
+  const p = document.createElement("p");
+  p.className = "fade-line";
   p.style.opacity = 1;
   p.innerHTML = added
-    ? "<em>You hold a small, pitted key – its teeth worn smooth by a thousand careless hands.</em>"
+    ? "<em>You hold a small, pitted key — its teeth worn smooth by a thousand careless hands.</em>"
     : "<em>The key is already in your pocket. It hums faintly.</em>";
   c.appendChild(p);
 
-  // Just give a hint if they have the journal but haven't unlocked memory yet
-  const inv = JSON.parse(localStorage.getItem("inventory")||"[]");
-  const hasJournal = inv.some(i=> {
-    const name = (typeof i === 'string') ? i : (i && i.name ? i.name : '');
-    return name.toLowerCase().includes("memory") || name.toLowerCase().includes("journal");
-  });
+  // Check if player has journal
+  const hasJournal = hasItemInInventory("memory") || hasItemInInventory("journal");
 
-  setTimeout(()=> {
-    const silence=document.createElement("p");
-    silence.className="fade-line";
+  setTimeout(() => {
+    const silence = document.createElement("p");
+    silence.className = "fade-line";
     silence.style.opacity = 1;
     silence.innerHTML = "<em>The town exhales. For a long moment, you cannot hear yourself think.</em>";
-    if(hasJournal && localStorage.getItem('memory_town')!=='true'){
+    if (hasJournal && localStorage.getItem('memory_town') !== 'true') {
       silence.innerHTML += "<br><em>Something about this place stirs the pages of your journal...</em>";
-    } else if(!hasJournal){
+    } else if (!hasJournal) {
       silence.innerHTML += "<br><em>Perhaps if you had something to remember by...</em>";
     }
     c.appendChild(silence);
 
-    setTimeout(()=> {
+    setTimeout(() => {
       showChoices([
         { text: "Examine the town square", action: examineTown },
-        { text: "Return to the River Shade", action: ()=> window.location.href = "perfect_path.html" }
+        { text: "Return to the River Shade", action: () => window.location.href = "perfect_path.html" }
       ]);
     }, 1700);
   }, 1200);
 }
 
 function examineTown(){
-  const c=document.getElementById("dynamic");
-  const inv = JSON.parse(localStorage.getItem("inventory")||"[]");
-  const hasJournal = inv.some(i=> {
-    const name = (typeof i === 'string') ? i : (i && i.name ? i.name : '');
-    return name.toLowerCase().includes("memory") || name.toLowerCase().includes("journal");
-  });
+  const c = document.getElementById("dynamic");
+  const hasJournal = hasItemInInventory("memory") || hasItemInInventory("journal");
 
   console.log("Has journal:", hasJournal);
 
-  if(hasJournal && localStorage.getItem('memory_town')!=='true'){
+  if (hasJournal && localStorage.getItem('memory_town') !== 'true') {
     // Play memory unlock cinematic
     const fade = document.getElementById('fade-overlay');
     const alert = document.getElementById('memory-alert');
@@ -188,7 +225,7 @@ function examineTown(){
     openingLine.innerHTML = "<em>You open the journal. The ink bleeds across the page, forming words you don't remember writing.</em>";
     c.appendChild(openingLine);
     
-    setTimeout(()=>{
+    setTimeout(() => {
       fade.style.opacity = '1';
       fade.style.pointerEvents = 'auto';
       
@@ -200,31 +237,31 @@ function examineTown(){
       
       const container = document.createElement('div');
       Object.assign(container.style, {
-        position:'fixed',top:'35%',left:'50%',transform:'translateX(-50%)',
-        zIndex:'2050',maxWidth:'80%',pointerEvents:'none'
+        position:'fixed', top:'35%', left:'50%', transform:'translateX(-50%)',
+        zIndex:'2050', maxWidth:'80%', pointerEvents:'none'
       });
       document.body.appendChild(container);
       
-      memLines.forEach((txt,idx)=>{
-        const el=document.createElement('div');
-        el.className='memory-line';
-        el.textContent=txt;
+      memLines.forEach((txt,idx) => {
+        const el = document.createElement('div');
+        el.className = 'memory-line';
+        el.textContent = txt;
         container.appendChild(el);
-        setTimeout(()=>el.style.opacity='1',1500+idx*2500);
+        setTimeout(() => el.style.opacity = '1', 1500 + idx * 2500);
       });
       
-      setTimeout(()=>{
-        alert.style.opacity='1';
-      },1500+memLines.length*2500);
+      setTimeout(() => {
+        alert.style.opacity = '1';
+      }, 1500 + memLines.length * 2500);
       
-      setTimeout(()=>{
-        // SET FLAGS - both naming conventions
-        localStorage.setItem('memory_town','true');
-        localStorage.setItem('townMemoryUnlocked','true');
+      setTimeout(() => {
+        // SET FLAGS
+        localStorage.setItem('memory_town', 'true');
+        localStorage.setItem('townMemoryUnlocked', 'true');
         
-        alert.style.opacity='0';
-        fade.style.opacity='0';
-        fade.style.pointerEvents='none';
+        alert.style.opacity = '0';
+        fade.style.opacity = '0';
+        fade.style.pointerEvents = 'none';
         container.remove();
         
         c.innerHTML = "";
@@ -234,43 +271,43 @@ function examineTown(){
         memP.innerHTML = "<em>The journal snaps shut. The town watches, and says nothing.</em><br><strong>Memory of the Town unlocked.</strong>";
         c.appendChild(memP);
         
-        setTimeout(()=> {
+        setTimeout(() => {
           showChoices([
-            { text: "Return to the River Shade", action: ()=> window.location.href = "perfect_path.html" }
+            { text: "Return to the River Shade", action: () => window.location.href = "perfect_path.html" }
           ]);
         }, 2000);
-      },1500+memLines.length*2500+3500);
+      }, 1500 + memLines.length * 2500 + 3500);
     }, 2000);
-  } else if(!hasJournal) {
+  } else if (!hasJournal) {
     c.innerHTML = "";
     pulseText([
       "You walk through the empty marketplace, footsteps echoing against cobblestone.",
       "The shutters stare. The kite hangs frozen. Nothing moves.",
-      "There's a memory here, but you can't quite grasp it without something to anchor it."
-    ], 2800, ()=>{
+      "There's a memory here, but you don't have the key to unlock it."
+    ], 2800, () => {
       showChoices([
-        { text: "Return to the River Shade", action: ()=> window.location.href = "perfect_path.html" }
+        { text: "Return to the River Shade", action: () => window.location.href = "perfect_path.html" }
       ]);
     });
   } else {
-    // Already unlocked
+    // Memory already unlocked
     c.innerHTML = "";
     const p = document.createElement("p");
     p.className = "fade-line";
     p.style.opacity = 1;
-    p.innerHTML = "<em>The memory lingers here, refusing to fade. The town remembers.</em>";
+    p.innerHTML = "<em>The memory lingers, familiar now. The town has nothing more to show you.</em>";
     c.appendChild(p);
-    setTimeout(()=>{
+    
+    setTimeout(() => {
       showChoices([
-        { text: "Return to the River Shade", action: ()=> window.location.href = "perfect_path.html" }
+        { text: "Return to the River Shade", action: () => window.location.href = "perfect_path.html" }
       ]);
     }, 1500);
   }
 }
 
-document.addEventListener("DOMContentLoaded", ()=> {
-  beginTown();
-});
+// Initialize
+document.addEventListener('DOMContentLoaded', beginTown);
 </script>
 </body>
 </html>
