@@ -3,30 +3,168 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The River Shade – Perfect Path</title>
+<title>The River Shade — Perfect Path</title>
 <link rel="stylesheet" href="style.css">
 <link href="mobile.css" rel="stylesheet"/>
 <style>
-  body{background:#000;color:#ddd;font-family:Georgia,serif;padding:2rem;overflow-x:hidden;overflow-y:auto;}
-  h1{font-size:1.8rem;text-align:center;margin-bottom:1rem;color:#cfeafc;}
-  .fade-line{opacity:0;text-align:center;transition:opacity 2s ease;font-size:1.2rem;margin:0.8rem 0;}
-  .choice{display:block;color:#9cf;text-decoration:none;margin:.8rem 0;padding:.4rem .8rem;border:1px solid #9cf;border-radius:8px;max-width:360px;}
-  .choice:hover{opacity:.9;}
-  #inventory-box,#memory-box{position:fixed;background:rgba(0,0,0,0.6);border:1px solid #666;padding:.6rem 1rem;border-radius:8px;font-family:monospace;color:#dfeeff;}
-  #inventory-box{right:1rem;bottom:1rem;}
-  #memory-box{left:1rem;bottom:1rem;text-align:left;}
-  #reset-btn{position:fixed;top:12px;right:12px;padding:.4rem .6rem;border-radius:6px;background:#600;color:#fff;border:none;cursor:pointer;}
-  #memory-alert{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#05203a,#0b2b45);color:#cfeafc;padding:10px 16px;border-radius:8px;opacity:0;transition:opacity .5s;z-index:1200;font-family:monospace;}
-  #memory-alert.show{opacity:1;}
-  .unlocked-badge{
+  body {
+    background: #000;
+    color: #ddd;
+    font-family: Georgia, serif;
+    padding: 2rem;
+    padding-bottom: 180px; /* Space for fixed boxes */
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #cfeafc;
+  }
+  
+  .fade-line {
+    opacity: 0;
+    text-align: center;
+    transition: opacity 2s ease;
+    font-size: 1.2rem;
+    margin: 0.8rem 0;
+  }
+  
+  #links {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1rem;
+    position: relative;
+    z-index: 100; /* Above boxes */
+  }
+  
+  .choice {
+    display: block;
+    color: #9cf;
+    text-decoration: none;
+    margin: 1rem auto;
+    padding: 0.8rem 1.2rem;
+    border: 1px solid #9cf;
+    border-radius: 8px;
+    max-width: 400px;
+    transition: all 0.3s;
+    position: relative;
+    z-index: 100; /* Above boxes */
+    background: rgba(0,0,0,0.8); /* Solid background */
+  }
+  
+  .choice:hover {
+    opacity: 0.9;
+    background: rgba(156,207,255,0.1);
+  }
+  
+  /* Fixed UI Boxes - Lower z-index, non-blocking */
+  #inventory-box, #memory-box {
+    position: fixed;
+    background: rgba(0,0,0,0.85);
+    border: 1px solid #666;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+    color: #dfeeff;
+    z-index: 50; /* Below links */
+    pointer-events: none; /* Don't block clicks */
+    max-width: 250px;
+  }
+  
+  #inventory-box * , #memory-box * {
+    pointer-events: auto; /* Text can still be selected */
+  }
+  
+  #inventory-box {
+    right: 1rem;
+    bottom: 1rem;
+  }
+  
+  #memory-box {
+    left: 1rem;
+    bottom: 1rem;
+    text-align: left;
+  }
+  
+  #reset-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    background: #600;
+    color: #fff;
+    border: 1px solid #900;
+    cursor: pointer;
+    z-index: 1000;
+    font-family: monospace;
+  }
+  
+  #reset-btn:hover {
+    background: #800;
+  }
+  
+  #memory-alert {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, #05203a, #0b2b45);
+    color: #cfeafc;
+    padding: 10px 16px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.5s;
+    z-index: 1200;
+    font-family: monospace;
+    pointer-events: none;
+  }
+  
+  #memory-alert.show {
+    opacity: 1;
+  }
+  
+  .unlocked-badge {
     margin-left: 10px;
     padding: 2px 8px;
     border-radius: 6px;
-    background: linear-gradient(180deg,#2b4b66,#153245);
-    color:#dcefff;
-    font-size:0.7rem;
+    background: linear-gradient(180deg, #2b4b66, #153245);
+    color: #dcefff;
+    font-size: 0.7rem;
     font-weight: bold;
-    letter-spacing:.03em;
+    letter-spacing: 0.03em;
+  }
+  
+  /* Mobile adjustments */
+  @media (max-width: 768px) {
+    body {
+      padding-bottom: 220px;
+    }
+    
+    #inventory-box {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 100%;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    
+    #memory-box {
+      left: 0;
+      right: 0;
+      bottom: 80px;
+      max-width: 100%;
+      text-align: center;
+    }
+    
+    .choice {
+      font-size: 1rem;
+      padding: 1rem 1.5rem;
+    }
   }
 </style>
 </head>
@@ -35,7 +173,7 @@
 <h1>The Perfect Path</h1>
 
 <div id="intro">
-  <div class="fade-line">You wake beneath the river's surface – not drowning, but breathing as if the water itself remembers you.</div>
+  <div class="fade-line">You wake beneath the river's surface — not drowning, but breathing as if the water itself remembers you.</div>
   <div class="fade-line">Shadows move above, slow and deliberate, waiting.</div>
   <div class="fade-line">Something whispers... your name?</div>
   <div class="fade-line">You stand, dripping and weightless.</div>
@@ -53,187 +191,212 @@
 <script>
 /* ---------- Fade-in intro ---------- */
 function playIntro(callback){
-  const lines=document.querySelectorAll('.fade-line');
-  lines.forEach((line,idx)=>{
-    setTimeout(()=>line.style.opacity='1',idx*2800);
+  const lines = document.querySelectorAll('.fade-line');
+  lines.forEach((line, idx) => {
+    setTimeout(() => line.style.opacity = '1', idx * 2800);
   });
-  setTimeout(()=>{
-    document.getElementById('links').style.display='block';
-    if(callback)callback();
-  },lines.length*2800+200);
+  setTimeout(() => {
+    document.getElementById('links').style.display = 'block';
+    if(callback) callback();
+  }, lines.length * 2800 + 200);
 }
 
 /* ---------- Inventory + memory UI ---------- */
 function parseInventory(){
   try { 
-    const raw=JSON.parse(localStorage.getItem('inventory')||'[]');
-    return raw.map(i=>typeof i==='string'?{id:i,name:i.replace(/_/g,' ')}:i);
+    const raw = JSON.parse(localStorage.getItem('inventory') || '[]');
+    return raw.map(i => typeof i === 'string' ? {id: i, name: i.replace(/_/g, ' ')} : i);
   } catch(e){
     return [];
   }
 }
 
 function refreshInventoryBox(){
-  const inv=parseInventory();
-  document.getElementById('inventory-box').innerHTML="<strong>Inventory</strong><br>"+(inv.length?inv.map(i=>i.name||i.id).join('<br>'):'(empty)');
+  const inv = parseInventory();
+  document.getElementById('inventory-box').innerHTML = 
+    "<strong>Inventory</strong><br>" + 
+    (inv.length ? inv.map(i => i.name || i.id).join('<br>') : '(empty)');
 }
 
 function refreshMemoryBox(){
-  const memNames={tavern:'Tavern',cellar:'Cellar',riverbank:'Riverbank',haunt:'Haunt',town:'Town'};
-  let html="<strong>Memories</strong><br>";
-  let count=0;
+  const memNames = {
+    tavern: 'Tavern',
+    cellar: 'Cellar',
+    riverbank: 'Riverbank',
+    haunt: 'Haunt',
+    town: 'Town'
+  };
+  let html = "<strong>Memories</strong><br>";
+  let count = 0;
   for(const k in memNames){
-    const got=localStorage.getItem('memory_'+k)==='true';
-    html+=`${got?'✔️':'⬜'} ${memNames[k]}<br>`;
-    if(got)count++;
+    const got = localStorage.getItem('memory_' + k) === 'true';
+    html += `${got ? '✔️' : '⬜'} ${memNames[k]}<br>`;
+    if(got) count++;
   }
-  html+=`<hr>${count}/5 collected`;
-  document.getElementById('memory-box').innerHTML=html;
+  html += `<hr>${count}/5 collected`;
+  document.getElementById('memory-box').innerHTML = html;
 }
 
 function showMemoryAlert(text){
-  const el=document.getElementById('memory-alert');
-  el.textContent=text;
+  const el = document.getElementById('memory-alert');
+  el.textContent = text;
   el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),3600);
+  setTimeout(() => el.classList.remove('show'), 3600);
 }
 
 /* ---------- Build dynamic links ---------- */
 function buildLinks(){
-  const links=[];
+  const links = [];
   
   // Always show tavern
-  links.push({href:'perfect_tavern.html',text:'🍺 Enter the Tavern'});
+  links.push({href: 'perfect_tavern.html', text: '🍺 Enter the Tavern'});
 
   // Unlock Riverbank & Haunt after first Tavern visit
-  const visitedTavern = localStorage.getItem('visited_tavern')==='true';
+  const visitedTavern = localStorage.getItem('visited_tavern') === 'true';
   if(visitedTavern){
-    localStorage.setItem('visited_riverbank','true');
-    localStorage.setItem('visited_haunt','true');
+    localStorage.setItem('visited_riverbank', 'true');
+    localStorage.setItem('visited_haunt', 'true');
   }
 
-  if(localStorage.getItem('visited_riverbank')==='true'){
-    links.push({href:'perfect_riverbank.html',text:'🌊 Walk to the Riverbank'});
+  if(localStorage.getItem('visited_riverbank') === 'true'){
+    links.push({href: 'perfect_riverbank.html', text: '🌊 Walk to the Riverbank'});
   }
   
-  if(localStorage.getItem('visited_haunt')==='true'){
-    links.push({href:'perfect_haunt.html',text:'🌫️ Wander into the Haunt'});
+  if(localStorage.getItem('visited_haunt') === 'true'){
+    links.push({href: 'perfect_haunt.html', text: '🌫️ Wander into the Haunt'});
   }
 
-  // ONLY unlock Town & Cellar after ACTUALLY visiting (not just having flags set) Riverbank OR Haunt
-  // Check if player has returned from either location
+  // Unlock Town & Cellar after visiting Riverbank OR Haunt
   const lastVisit = localStorage.getItem('last_perfect_visit');
   const returnedFromRiver = lastVisit === 'perfect_riverbank';
   const returnedFromHaunt = lastVisit === 'perfect_haunt';
   
   if(returnedFromRiver || returnedFromHaunt){
-    localStorage.setItem('visited_cellar','true');
-    localStorage.setItem('visited_town','true');
+    localStorage.setItem('visited_cellar', 'true');
+    localStorage.setItem('visited_town', 'true');
   }
 
-  // Check if cellar is unlocked
-  if(localStorage.getItem('visited_cellar')==='true'){
+  // Cellar
+  if(localStorage.getItem('visited_cellar') === 'true'){
     const isNew = (returnedFromRiver || returnedFromHaunt) && !localStorage.getItem('cellar_badge_shown');
     links.push({
-      href:'perfect_cellar.html',
-      text:'🔒 Descend to the Cellar',
+      href: 'perfect_cellar.html',
+      text: '🔓 Descend to the Cellar',
       badge: isNew ? 'NEW' : null
     });
-    if(isNew) localStorage.setItem('cellar_badge_shown','true');
+    if(isNew) localStorage.setItem('cellar_badge_shown', 'true');
   }
 
-  // Check if town is unlocked
-  if(localStorage.getItem('visited_town')==='true'){
+  // Town
+  if(localStorage.getItem('visited_town') === 'true'){
     const isNew = (returnedFromRiver || returnedFromHaunt) && !localStorage.getItem('town_badge_shown');
     links.push({
-      href:'perfect_town.html',
-      text:'🏙️ Return to the Town',
+      href: 'perfect_town.html',
+      text: '🏙️ Return to the Town',
       badge: isNew ? 'NEW' : null
     });
-    if(isNew) localStorage.setItem('town_badge_shown','true');
+    if(isNew) localStorage.setItem('town_badge_shown', 'true');
   }
 
-  // Check for Cellar memory completion -> unlock Waterfront
-  const cellarMemDone = localStorage.getItem('memory_cellar')==='true';
-  if(cellarMemDone){
-    localStorage.setItem('visited_waterfront','true');
-  }
-
-  if(localStorage.getItem('visited_waterfront')==='true'){
-    const isNew = cellarMemDone && !localStorage.getItem('waterfront_badge_shown');
+  // Waterfront unlocks from cellar
+  if(localStorage.getItem('visited_waterfront') === 'true' || localStorage.getItem('perfectWaterfrontUnlocked') === 'true'){
+    const isNew = localStorage.getItem('memory_cellar') === 'true' && !localStorage.getItem('waterfront_badge_shown');
     links.push({
-      href:'perfect_waterfront.html',
-      text:'🌑 Walk to the Waterfront',
+      href: 'perfect_waterfront.html',
+      text: '🌊 Follow the Current to the Waterfront',
       badge: isNew ? 'NEW' : null
     });
-    if(isNew) localStorage.setItem('waterfront_badge_shown','true');
+    if(isNew) localStorage.setItem('waterfront_badge_shown', 'true');
   }
 
-  // Check for all 5 memories -> unlock bridge
-  const allMemCollected = ['tavern','cellar','riverbank','haunt','town']
-    .every(k => localStorage.getItem('memory_'+k)==='true');
-  if(allMemCollected){
-    localStorage.setItem('visited_bridge','true');
+  // Bridge appears when all memories collected
+  const allKeys = ['memory_tavern', 'memory_cellar', 'memory_riverbank', 'memory_haunt', 'memory_town'];
+  const allMem = allKeys.every(k => localStorage.getItem(k) === 'true');
+  if(allMem){
+    links.push({
+      href: 'perfect_bridge.html',
+      text: '🌉 Confront the Shade at the Bridge',
+      badge: 'FINAL'
+    });
   }
 
-  if(localStorage.getItem('visited_bridge')==='true'){
-    links.push({href:'perfect_bridge.html',text:'🌉 Approach the Bridge'});
-  }
-
-  // Render
-  const cont=document.getElementById('links');
-  cont.innerHTML='';
-  links.forEach(({href,text,badge})=>{
-    const a=document.createElement('a');
-    a.className='choice';
-    a.href=href;
-    a.innerHTML=text;
-    if(badge){
-      const sp=document.createElement('span');
-      sp.className='unlocked-badge';
-      sp.textContent=badge;
-      a.appendChild(sp);
+  const container = document.getElementById('links');
+  container.innerHTML = '';
+  links.forEach(l => {
+    const a = document.createElement('a');
+    a.className = 'choice';
+    a.href = l.href;
+    a.textContent = l.text;
+    if(l.badge){
+      const badge = document.createElement('span');
+      badge.className = 'unlocked-badge';
+      badge.textContent = l.badge;
+      a.appendChild(document.createTextNode(' '));
+      a.appendChild(badge);
     }
-    cont.appendChild(a);
+    container.appendChild(a);
   });
 
-  // Show special alert if bridge just unlocked
-  if(allMemCollected && !localStorage.getItem('bridge_alert_shown')){
-    setTimeout(()=>{
-      showMemoryAlert('All memories collected. The bridge awaits.');
-      localStorage.setItem('bridge_alert_shown','true');
-    },1000);
+  // Show alerts for new unlocks
+  const last = localStorage.getItem('last_perfect_visit');
+  if(last === 'perfect_riverbank' && localStorage.getItem('memory_riverbank') === 'true'){
+    showMemoryAlert('The current hums softly... new paths have opened.');
+    localStorage.removeItem('last_perfect_visit');
+  }
+  else if(last === 'perfect_tavern'){
+    showMemoryAlert('New paths have opened beyond the tavern.');
+    localStorage.removeItem('last_perfect_visit');
+  }
+  else if(last === 'perfect_cellar' && localStorage.getItem('memory_cellar') === 'true'){
+    showMemoryAlert('The waterfront calls to you...');
+    localStorage.removeItem('last_perfect_visit');
+  }
+  else if(last === 'perfect_waterfront'){
+    showMemoryAlert("The Shade's mark burns with purpose...");
+    localStorage.removeItem('last_perfect_visit');
+  }
+  
+  // Special alert when all memories collected
+  if(allMem && !localStorage.getItem('bridge_alert_shown')){
+    setTimeout(() => {
+      showMemoryAlert('All fragments resonate... The bridge awaits.');
+      localStorage.setItem('bridge_alert_shown', 'true');
+    }, 1000);
   }
 }
 
 /* ---------- Reset ---------- */
 function resetPerfect(){
-  if(!confirm('Reset all Perfect Path progress and clear inventory?'))return;
-  ['memory_tavern','memory_cellar','memory_riverbank','memory_haunt','memory_town',
-   'visited_tavern','visited_riverbank','visited_haunt','visited_town','visited_cellar','visited_waterfront','visited_bridge',
-   'perfect_unlock_phase','last_perfect_visit','perfect_intro_played',
-   'riverbankMemoryUnlocked','cellarMemoryUnlocked','tavernMemoryUnlocked',
-   'hauntMemoryUnlocked','townMemoryUnlocked','perfectCellarUnlocked','perfectTownUnlocked','perfectWaterfrontUnlocked',
-   'cellar_badge_shown','town_badge_shown','waterfront_badge_shown','bridge_alert_shown'].forEach(k=>localStorage.removeItem(k));
+  if(!confirm('Reset all Perfect Path progress and clear inventory?')) return;
+  
+  ['memory_tavern', 'memory_cellar', 'memory_riverbank', 'memory_haunt', 'memory_town',
+   'visited_tavern', 'visited_riverbank', 'visited_haunt', 'visited_town', 'visited_cellar', 'visited_waterfront', 'visited_bridge',
+   'perfect_unlock_phase', 'last_perfect_visit', 'perfect_intro_played',
+   'riverbankMemoryUnlocked', 'cellarMemoryUnlocked', 'tavernMemoryUnlocked',
+   'hauntMemoryUnlocked', 'townMemoryUnlocked', 'perfectCellarUnlocked', 'perfectTownUnlocked', 'perfectWaterfrontUnlocked',
+   'cellar_badge_shown', 'town_badge_shown', 'waterfront_badge_shown', 'bridge_alert_shown'].forEach(k => localStorage.removeItem(k));
+  
   localStorage.removeItem('inventory');
   showMemoryAlert('The path fades to black...');
-  setTimeout(()=>location.reload(),1400);
+  setTimeout(() => location.reload(), 1400);
 }
 
 /* ---------- Boot ---------- */
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', () => {
   refreshInventoryBox();
   refreshMemoryBox();
-  const introPlayed=localStorage.getItem('perfect_intro_played')==='true';
+  
+  const introPlayed = localStorage.getItem('perfect_intro_played') === 'true';
   if(!introPlayed){
-    localStorage.setItem('perfect_intro_played','true');
+    localStorage.setItem('perfect_intro_played', 'true');
     playIntro(buildLinks);
   } else {
-    document.getElementById('intro').style.display='none';
-    document.getElementById('links').style.display='block';
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('links').style.display = 'block';
     buildLinks();
   }
-  document.getElementById('reset-btn').addEventListener('click',resetPerfect);
+  
+  document.getElementById('reset-btn').addEventListener('click', resetPerfect);
 });
 </script>
 
