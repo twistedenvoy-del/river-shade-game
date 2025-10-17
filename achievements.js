@@ -218,7 +218,6 @@
     
     if (!stats.uniqueDeaths) stats.uniqueDeaths = [];
     
-    // Ensure deathType is stored as string
     const deathId = String(deathType);
     
     if (!stats.uniqueDeaths.includes(deathId)) {
@@ -231,11 +230,10 @@
     if (stats.totalDeaths === 1) unlockAchievement('first_death');
     if (stats.totalDeaths >= 5) unlockAchievement('frequent_visitor');
     
-    // Death expert requires seeing all 7 awakening narratives (narrative_0 through narrative_6)
     const narrativeDeaths = stats.uniqueDeaths.filter(d => String(d).startsWith('narrative_'));
     if (narrativeDeaths.length >= 7) unlockAchievement('death_expert');
     
-    console.log('Death tracked:', deathId, '| Total:', stats.totalDeaths, '| Unique:', stats.uniqueDeaths.length, '| Narratives:', narrativeDeaths.length);
+    console.log('Death tracked:', deathId, '| Total:', stats.totalDeaths);
     
     // Check journal unlock after death tracking
     checkJournalUnlock();
@@ -257,7 +255,7 @@
       unlockAchievement('shade_friend');
     }
     
-    // NEW: Check if player has seen all endings
+    // Check if player has seen all endings
     const allEndingTypes = ['bad', 'true', 'perfect'];
     const hasAllEndings = allEndingTypes.every(type => stats.endingsReached.includes(type));
     if (hasAllEndings) {
@@ -292,6 +290,28 @@
     
     // Check journal unlock after item collection
     checkJournalUnlock();
+  }
+
+  // === Journal Unlock Check ===
+  function checkJournalUnlock() {
+    const stats = getStats();
+    
+    const hasEnding = stats.endingsReached && stats.endingsReached.length >= 1;
+    const hasItems = stats.itemsCollected && stats.itemsCollected.length >= 3;
+    const hasDeaths = stats.totalDeaths >= 5;
+    
+    if (hasEnding || hasItems || hasDeaths) {
+      const wasUnlocked = localStorage.getItem('journalUnlocked') === 'true';
+      
+      if (!wasUnlocked) {
+        console.log('📖 Journal unlocked!', { hasEnding, hasItems, hasDeaths });
+        localStorage.setItem('journalUnlocked', 'true');
+        localStorage.setItem('journalJustUnlocked', 'true');
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   // === Auto-tracking from existing flags ===
@@ -330,32 +350,6 @@
     if (allMemories) unlockAchievement('memory_complete');
     
     saveStats(stats);
-  }
-
-  // === JOURNAL UNLOCK SYSTEM ===
-  function checkJournalUnlock() {
-    // Skip if already unlocked
-    if (localStorage.getItem('journalUnlocked') === 'true') return false;
-    
-    const stats = getStats();
-    const inv = JSON.parse(localStorage.getItem('inventory') || '[]');
-    const flags = JSON.parse(localStorage.getItem('rflags') || '{}');
-    
-    // Three unlock conditions
-    const hasEnding = (stats.endingsReached && stats.endingsReached.length > 0);
-    const hasItems = inv.length >= 4;
-    const hasDeaths = (flags.deathCount || 0) >= 3;
-    
-    if (hasEnding || hasItems || hasDeaths) {
-      localStorage.setItem('journalUnlocked', 'true');
-      console.log("📖 Journal unlocked!", { hasEnding, hasItems, hasDeaths });
-      
-      // Flag that journal was just unlocked (for notification)
-      localStorage.setItem('journalJustUnlocked', 'true');
-      return true;
-    }
-    
-    return false;
   }
 
   // === Add Styles ===
@@ -403,12 +397,6 @@
   `;
   document.head.appendChild(style);
 
-  // ============================================================
-// REPLACE THE END OF achievements.js WITH THIS
-// (Find the line "// === Initialize on page load ===" 
-//  and replace everything from there to the end)
-// ============================================================
-
   // === Initialize on page load ===
   document.addEventListener('DOMContentLoaded', () => {
     initStats();
@@ -421,8 +409,10 @@
     // Check journal unlock
     checkJournalUnlock();
     
-    // Initialize journal button (if unlocked)
-    initJournalButton();
+    // Initialize journal button
+    if (window.initJournalButton) {
+      window.initJournalButton();
+    }
   });
 
   // === Expose globally ===
@@ -438,13 +428,12 @@
 })();
 
 // ============================================================
-// JOURNAL BUTTON SYSTEM (runs after achievements code)
+// JOURNAL BUTTON SYSTEM
 // ============================================================
 (function() {
   'use strict';
   
   function createJournalButton() {
-    // Don't duplicate
     if (document.getElementById('journal-btn-universal')) return;
     
     const btn = document.createElement('a');
@@ -472,7 +461,6 @@
       transition: all 0.3s;
     `;
     
-    // Hover effect
     btn.addEventListener('mouseenter', () => {
       btn.style.background = 'linear-gradient(135deg, #8b5a2b 0%, #654321 100%)';
       btn.style.transform = 'scale(1.1)';
@@ -485,7 +473,6 @@
     });
     
     document.body.appendChild(btn);
-    console.log('✓ Journal button shown');
   }
   
   function showJournalUnlockToast() {
@@ -512,18 +499,16 @@
     toast.innerHTML = `
       <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📖</div>
       <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: #c9a66b; font-weight: bold; margin-bottom: 0.25rem;">The Keeper's Journal</div>
-      <div style="font-size: 0.85rem; color: #d2b48c; line-height: 1.4;">Guide unlocked! Look for 📖 in the top-left corner.</div>
+      <div style="font-size: 0.85rem; color: #d2b48c; line-height: 1.4;">Guide unlocked! Look for 📖 in the top-left.</div>
     `;
     
     document.body.appendChild(toast);
     
-    // Animate in
     setTimeout(() => {
       toast.style.opacity = '1';
       toast.style.transform = 'translateX(-50%) translateY(0)';
     }, 100);
     
-    // Animate out
     setTimeout(() => {
       toast.style.opacity = '0';
       toast.style.transform = 'translateX(-50%) translateY(-20px)';
@@ -534,7 +519,6 @@
   }
   
   function initJournalButton() {
-    // Check if unlocked
     const isUnlocked = localStorage.getItem('journalUnlocked') === 'true';
     const justUnlocked = localStorage.getItem('journalJustUnlocked') === 'true';
     
@@ -547,109 +531,12 @@
     }
   }
   
-  // Run on load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initJournalButton);
   } else {
     initJournalButton();
   }
   
-  // Expose globally
   window.initJournalButton = initJournalButton;
   
 })();
-
-
-// ============================================================
-// NOW ADD THIS TO mobile.css (at the very end)
-// This fixes achievement notification positioning on mobile
-// ============================================================
-
-/* === FIXED ACHIEVEMENT NOTIFICATIONS FOR MOBILE === */
-@media (max-width: 768px) {
-  .achievement-notification {
-    left: 10px !important;
-    right: 10px !important;
-    top: 70px !important;
-    width: auto !important;
-    transform: translateX(0) !important;
-    max-width: calc(100vw - 20px);
-  }
-  
-  .achievement-notification.show {
-    transform: translateX(0) !important;
-  }
-  
-  /* Journal unlock toast on mobile */
-  #journal-unlock-toast {
-    top: 70px !important;
-    left: 10px !important;
-    right: 10px !important;
-    max-width: calc(100vw - 20px) !important;
-    transform: translateX(0) translateY(-20px) !important;
-  }
-  
-  /* Item examination modal on mobile */
-  .modal-content {
-    width: 95% !important;
-    max-width: 95% !important;
-    padding: 1.5rem 1rem !important;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-  
-  .modal-close {
-    width: 44px !important;
-    height: 44px !important;
-    font-size: 1.5rem !important;
-  }
-  
-  /* Journal button on mobile */
-  #journal-btn-universal {
-    top: 0.5rem !important;
-    left: 0.5rem !important;
-    font-size: 1.2rem !important;
-    padding: 0.4rem 0.7rem !important;
-    z-index: 10002 !important;
-  }
-  
-  /* Ensure achievement notifications are above inventory */
-  .achievement-notification {
-    z-index: 10001 !important;
-  }
-  
-  /* Keep inventory below notifications */
-  #inventory-box {
-    z-index: 50 !important;
-  }
-  
-  #memory-box {
-    z-index: 50 !important;
-  }
-}
-
-/* === TOUCH DEVICE IMPROVEMENTS === */
-@media (hover: none) and (pointer: coarse) {
-  .achievement-notification {
-    padding: 1rem !important;
-  }
-  
-  .achievement-icon {
-    font-size: 2rem !important;
-  }
-  
-  .achievement-name {
-    font-size: 0.95rem !important;
-  }
-  
-  /* Make sure modals are touchable */
-  .modal-overlay {
-    -webkit-tap-highlight-color: transparent;
-  }
-  
-  .modal-close {
-    min-width: 44px;
-    min-height: 44px;
-    touch-action: manipulation;
-  }
-}
