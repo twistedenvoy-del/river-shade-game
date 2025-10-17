@@ -135,56 +135,66 @@
   localStorage.setItem('visited_cellar', 'true');
   localStorage.setItem('last_perfect_visit', 'perfect_cellar');
 
-  // --- INVENTORY SYSTEM ---
-  let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
-  const invList = document.getElementById('inventory-list');
-
-  function updateInventory() {
-    // Re-read from localStorage to ensure we have the latest
-    inventory = JSON.parse(localStorage.getItem('inventory')) || [];
-    
-    const displayItems = inventory.map(item => {
-      if (typeof item === 'string') return item;
-      if (item && typeof item === 'object' && item.name) return item.name;
-      return JSON.stringify(item);
-    });
-    invList.textContent = displayItems.length ? displayItems.join(', ') : 'Empty';
-    
-    console.log("Inventory updated:", displayItems);
+  // --- SHARED INVENTORY FUNCTIONS (consistent across all perfect_ pages) ---
+  function getInventory() {
+    return JSON.parse(localStorage.getItem('inventory') || '[]');
   }
-  
-  function addItemToInventory(item) {
-    console.log("Adding item to inventory:", item);
+
+  function saveInventory(inv) {
+    localStorage.setItem('inventory', JSON.stringify(inv));
+    console.log("Inventory saved:", inv);
+  }
+
+  function hasItemInInventory(searchTerm) {
+    const inv = getInventory();
+    return inv.some(item => {
+      const name = (typeof item === 'string') ? item : (item.name || item.id || '');
+      return name.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  }
+
+  function addToInventory(item) {
+    const inv = getInventory();
     
-    // Re-read inventory from storage to get latest state
-    inventory = JSON.parse(localStorage.getItem('inventory')) || [];
-    
-    // Check if item already exists
-    const alreadyHas = inventory.some(i => {
-      if (typeof i === 'string' && typeof item === 'string') return i === item;
-      if (i.id && item.id) return i.id === item.id;
-      if (i.name && item.name) return i.name === item.name;
+    // Check if already has it
+    const alreadyHas = inv.some(existing => {
+      if (typeof existing === 'string' && typeof item === 'string') return existing === item;
+      if (existing.id && item.id) return existing.id === item.id;
+      if (existing.name && item.name) return existing.name === item.name;
       return false;
     });
     
     if (!alreadyHas) {
-      inventory.push(item);
-      localStorage.setItem('inventory', JSON.stringify(inventory));
-      console.log("Item added successfully. New inventory:", inventory);
-      updateInventory();
+      inv.push(item);
+      saveInventory(inv);
+      updateInventoryDisplay();
+      console.log("✓ Item added:", item);
       return true;
-    } else {
-      console.log("Item already in inventory");
-      return false;
     }
+    
+    console.log("Item already in inventory:", item);
+    return false;
   }
-  
-  updateInventory();
+
+  function updateInventoryDisplay() {
+    const inv = getInventory();
+    const displayItems = inv.map(item => {
+      if (typeof item === 'string') return item;
+      if (item && item.name) return item.name;
+      return JSON.stringify(item);
+    });
+    
+    document.getElementById('inventory-list').textContent = 
+      displayItems.length ? displayItems.join(', ') : 'Empty';
+  }
+
+  // Initialize display
+  updateInventoryDisplay();
 
   // Live sync inventory
   window.addEventListener('storage', (event) => {
     if (event.key === 'inventory') {
-      updateInventory();
+      updateInventoryDisplay();
     }
   });
 
@@ -193,25 +203,17 @@
   const alertBox = document.getElementById('alert-box');
   const content = document.getElementById('content');
 
-  console.log("Script loaded - about to check for key");
+  console.log("=== PERFECT CELLAR LOADED ===");
 
   // CHECK FOR KEY IMMEDIATELY ON PAGE LOAD
   function initializeCellar() {
     console.log("=== CELLAR INITIALIZATION ===");
-    console.log("Full inventory:", JSON.stringify(inventory, null, 2));
     
-    const hasKey = inventory.some(item => {
-      const name = (typeof item === 'string') ? item : (item && item.name ? item.name : '');
-      const itemName = name.toLowerCase();
-      console.log("Checking item:", itemName, "- has rust?", itemName.includes("rust"), "- has key?", itemName.includes("key"));
-      return itemName.includes("rust") || itemName.includes("key");
-    });
-
-    console.log("Final result - Has key:", hasKey);
+    const hasKey = hasItemInInventory("rust") || hasItemInInventory("key");
+    console.log("Has key:", hasKey);
 
     if (!hasKey) {
       console.log("NO KEY - Showing locked door");
-      // Show locked door - no key
       content.innerHTML = `
         <h1>The Cellar Door</h1>
         <p>The heavy door refuses to budge. You run your fingers over the lock — rusted, ancient, waiting.</p>
@@ -223,7 +225,6 @@
       `;
     } else {
       console.log("HAS KEY - Showing cellar interior");
-      // Player has key - show cellar interior
       content.innerHTML = `
         <h1>The cellar hums with quiet familiarity</h1>
         <p>The lantern's glow flickers over the damp stones. The air is heavy, aware of you.</p>
@@ -235,7 +236,7 @@
         </div>
       `;
 
-      // Now set up the inspect button
+      // Set up the inspect button
       setTimeout(() => {
         const inspectBtn = document.getElementById('inspect-paper');
         if (!inspectBtn) {
@@ -256,14 +257,8 @@
             <div id="choices"></div>
           `;
 
-          // Check for "Fragment of the River's Heart" robustly
-          const hasHeart = inventory.some(item => {
-            const name = (typeof item === 'string') ? item : (item && item.name ? item.name : '');
-            return name.toLowerCase().replace(/'/g, "'").includes("river's heart") || 
-                   name.toLowerCase().includes("riverheart") ||
-                   name.toLowerCase().includes("heart");
-          });
-
+          // Check for River's Heart
+          const hasHeart = hasItemInInventory("heart") || hasItemInInventory("river");
           console.log("Has River's Heart:", hasHeart);
 
           if (hasHeart) {
@@ -281,7 +276,6 @@
             // Cinematic memory unlock
             setTimeout(() => {
               fadeOverlay.style.opacity = 1;
-              fadeOverlay.style.pointerEvents = "none";
 
               setTimeout(() => {
                 memoryText.textContent = "The ink bleeds, but the words remain.";
@@ -301,37 +295,38 @@
               }, 8000);
 
               setTimeout(() => {
-                console.log("=== STARTING MEMORY UNLOCK SEQUENCE ===");
+                console.log("=== APPLYING MEMORY UNLOCK ===");
                 
-                // SET FLAGS - both naming conventions
+                // SET FLAGS
                 localStorage.setItem('memory_cellar', 'true');
                 localStorage.setItem('cellarMemoryUnlocked', 'true');
                 localStorage.setItem('perfectWaterfrontUnlocked', 'true');
                 localStorage.setItem('visited_waterfront', 'true');
-                console.log("Memory flags set");
-
-                // Add Fragment of Memory to inventory - IMPROVED VERSION
-                const journalItem = {id: 'journal', name: 'Fragment of Memory'};
-                const itemAdded = addItemToInventory(journalItem);
                 
-                if (itemAdded) {
-                  console.log("✓ Fragment of Memory added to inventory!");
-                } else {
-                  console.log("Fragment of Memory already in inventory");
-                }
+                // ADD JOURNAL TO INVENTORY - Critical fix!
+                const journalAdded = addToInventory({
+                  id: 'journal', 
+                  name: 'Fragment of Memory'
+                });
+                
+                console.log("Journal added:", journalAdded);
+                console.log("Current inventory:", getInventory());
 
                 // Hide overlays
                 alertBox.style.opacity = 0;
                 memoryText.style.opacity = 0;
                 fadeOverlay.style.opacity = 0;
-                fadeOverlay.style.pointerEvents = "none";
                 
                 // Show completion message
                 content.innerHTML = `
                   <h1>The current pulls you forward</h1>
                   <p>The fragment of memory lingers, refusing to fade.</p>
-                  <p style="color:#9cf; font-weight: bold;"><em>✓ You acquired: Fragment of Memory (Journal)</em></p>
-                  <p style="color:#9fbfff; margin-top:1.5rem;"><em>A new path opens... the waterfront calls to you.</em></p>
+                  <p style="color:#9cf; font-weight: bold; font-size: 1.1em;">
+                    ✓ You acquired: Fragment of Memory (Journal)
+                  </p>
+                  <p style="color:#9fbfff; margin-top:1.5rem;">
+                    <em>A new path opens... the waterfront calls to you.</em>
+                  </p>
                   <div id="choices">
                     <a href="perfect_waterfront.html" class="choice">Follow the current to the Waterfront</a>
                     <a href="perfect_path.html" class="choice">Return to the River Shade</a>
@@ -339,30 +334,27 @@
                 `;
                 
                 console.log("=== MEMORY UNLOCK COMPLETE ===");
-                console.log("Final inventory state:", JSON.parse(localStorage.getItem('inventory')));
               }, 11000);
             }, 2000);
           } else {
-            // Need River's Heart - FIX: Use proper div insertion instead of innerHTML +=
-            console.log("Player doesn't have River's Heart - showing need message");
+            // Need River's Heart
+            console.log("Player doesn't have River's Heart");
             
             const choicesDiv = document.getElementById('choices');
             choicesDiv.innerHTML = `
-              <p style="margin-top: 1.5rem;"><em>The paper stays silent. Perhaps something is missing... something with a pulse.</em></p>
+              <p style="margin-top: 1.5rem;">
+                <em>The paper stays silent. Perhaps something is missing... something with a pulse.</em>
+              </p>
               <a href="perfect_path.html" class="choice">Return to the River Shade</a>
             `;
-            
-            console.log("Button added, checking if it exists:", document.querySelector('#choices .choice'));
           }
         });
       }, 100);
     }
   }
 
-  // Call initialization immediately - don't wait
-  console.log("About to call initializeCellar");
+  // Call initialization
   initializeCellar();
-  console.log("After calling initializeCellar");
 </script>
 </body>
 </html>
